@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Healthcare Readmission Prediction AI Model</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="app">
+
+  <h1>🏥 Healthcare Readmission Prediction AI Model</h1>
+  <p class="subtitle">AI-Based Patient Readmission Risk Analysis</p>
+
+  <div class="card">
+
+    <h2>Patient Information</h2>
+
+    <div class="grid">
+      <input id="age" type="number" placeholder="Age" />
+      <select id="gender">
+        <option value="">Gender</option>
+        <option value="1">Male</option>
+        <option value="0">Female</option>
+      </select>
+
+      <select id="admission">
+        <option value="">Admission Type</option>
+        <option value="1">Emergency</option>
+        <option value="0">Elective</option>
+      </select>
+
+      <input id="stay" type="number" placeholder="Length of Stay (days)" />
+      <input id="meds" type="number" placeholder="No. of Medications" />
+      <input id="prev" type="number" placeholder="Previous Admissions" />
+    </div>
+
+    <button onclick="predict()">Predict Risk</button>
+
+    <div id="loader" class="loader hidden"></div>
+
+    <div class="result hidden" id="resultBox">
+      <h3 id="riskText"></h3>
+      <div class="progress">
+        <div id="bar"></div>
+      </div>
+      <p id="riskValue"></p>
+    </div>
+
+  </div>
+
+  <footer>
+    © 2026 Healthcare Readmission Prediction AI Model | AIML Project
+  </footer>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

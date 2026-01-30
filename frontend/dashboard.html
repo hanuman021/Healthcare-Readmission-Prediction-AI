@@ -1,0 +1,23 @@
+<h1>Admin Dashboard</h1>
+
+<div class="stats">
+  <div class="stat-card">Total Predictions<br><span>124</span></div>
+  <div class="stat-card high">High Risk<br><span>38</span></div>
+  <div class="stat-card low">Low Risk<br><span>86</span></div>
+</div>
+
+<canvas id="riskChart"></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+new Chart(riskChart, {
+  type: 'doughnut',
+  data: {
+    labels: ['High Risk','Low Risk'],
+    datasets: [{
+      data: [38,86],
+      backgroundColor: ['#e63946','#2a9d8f']
+    }]
+  }
+});
+</script>
