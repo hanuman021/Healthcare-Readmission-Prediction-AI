@@ -1,34 +1,53 @@
 import sqlite3
+from werkzeug.security import generate_password_hash
 
 conn = sqlite3.connect("database.db")
 c = conn.cursor()
 
-# Users table (Admin login)
+# =============================
+# USERS TABLE
+# =============================
 c.execute("""
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT,
-    password TEXT
+    username TEXT UNIQUE,
+    password TEXT,
+    role TEXT
 )
 """)
 
-# Predictions history table
+# =============================
+# PREDICTIONS TABLE (UPDATED)
+# =============================
 c.execute("""
 CREATE TABLE IF NOT EXISTS predictions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    age INTEGER,
     time_in_hospital INTEGER,
     num_lab_procedures INTEGER,
     num_medications INTEGER,
     number_inpatient INTEGER,
-    result TEXT
+    number_emergency INTEGER,
+    number_outpatient INTEGER,
+    result TEXT,
+    FOREIGN KEY(user_id) REFERENCES users(id)
 )
 """)
 
-# Insert default admin
-c.execute("INSERT INTO users (username, password) VALUES (?, ?)",
-          ("admin", "admin123"))
+# =============================
+# DEFAULT ADMIN
+# =============================
+c.execute("SELECT * FROM users WHERE username=?", ("admin",))
+if not c.fetchone():
+    hashed_password = generate_password_hash("admin123")
+    c.execute(
+        "INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
+        ("admin", hashed_password, "admin")
+    )
+    print("Admin created")
 
 conn.commit()
 conn.close()
 
-print("database.db created successfully")
+print("Database ready!")
