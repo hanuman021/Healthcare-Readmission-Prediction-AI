@@ -2,3 +2,18 @@ venv/
 __pycache__/
 *.pyc
 .env
+# Virtual Environment
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Database
+backend/database.db
+
+# Large Dataset
+backend/diabetic_data.csv
+
+# VS Code temp
+backend/tempCodeRunnerFile.py
