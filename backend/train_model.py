@@ -2,119 +2,126 @@ import pandas as pd
 import numpy as np
 import joblib
 import os
+import re
 
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import accuracy_score, classification_report
-from sklearn.utils import class_weight
 from xgboost import XGBClassifier
 
-# =============================
-# 1️⃣ Load Dataset
-# =============================
+# ============================================================
+# 1️⃣ LOAD DATA
+# ============================================================
 
 df = pd.read_csv("diabetic_data.csv")
 
-# =============================
-# 2️⃣ Target Conversion
-# =============================
+# ============================================================
+# 2️⃣ TARGET
+# ============================================================
 
-# Convert readmission to binary
 df["readmitted"] = df["readmitted"].apply(lambda x: 0 if x == "NO" else 1)
 
-# =============================
-# 3️⃣ Drop Unnecessary Columns
-# =============================
+# ============================================================
+# 3️⃣ DROP ID COLUMNS
+# ============================================================
 
 df.drop(["encounter_id", "patient_nbr"], axis=1, inplace=True)
 
-# =============================
-# 4️⃣ Handle Missing Values
-# =============================
+# ============================================================
+# 4️⃣ CLEAN DATA
+# ============================================================
 
-# Handle missing values
 df.replace("?", np.nan, inplace=True)
-df = df.ffill()
 
+# Convert age range to numeric midpoint
+df["age"] = df["age"].str.extract(r'(\d+)').astype(float) + 5
 
-# =============================
-# 5️⃣ Convert Age to Numeric
-# =============================
+# Separate numeric and categorical
+numeric_cols = df.select_dtypes(include=["int64", "float64"]).columns
+categorical_cols = df.select_dtypes(include=["object", "string"]).columns
 
-df["age"] = df["age"].str.extract(r'(\d+)').astype(int)
+df[numeric_cols] = df[numeric_cols].fillna(df[numeric_cols].median())
+df[categorical_cols] = df[categorical_cols].fillna(df[categorical_cols].mode().iloc[0])
 
-# =============================
-# 6️⃣ Encode Categorical Columns
-# =============================
+# ============================================================
+# 5️⃣ ONE HOT ENCODING
+# ============================================================
 
-for col in df.select_dtypes(include="object").columns:
-    df[col] = LabelEncoder().fit_transform(df[col])
+df = pd.get_dummies(df, drop_first=True)
 
-# =============================
-# 7️⃣ Split Features & Target
-# =============================
+# ============================================================
+# 6️⃣ FULL SAFE COLUMN CLEANING (VERY IMPORTANT)
+# ============================================================
+
+def clean_column(name):
+    # Keep only letters, numbers and underscore
+    name = re.sub(r'[^A-Za-z0-9_]', '_', name)
+    return name
+
+df.columns = [clean_column(col) for col in df.columns]
+
+# ============================================================
+# 7️⃣ SPLIT
+# ============================================================
 
 X = df.drop("readmitted", axis=1)
 y = df["readmitted"]
 
-# =============================
-# 8️⃣ Train-Test Split
-# =============================
-
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y,
+    X,
+    y,
     test_size=0.2,
     random_state=42,
     stratify=y
 )
 
-# =============================
-# 9️⃣ Class Weight (Imbalance Fix)
-# =============================
+# ============================================================
+# 8️⃣ HANDLE IMBALANCE
+# ============================================================
 
-weights = class_weight.compute_class_weight(
-    class_weight="balanced",
-    classes=np.unique(y_train),
-    y=y_train
-)
+scale_pos_weight = len(y_train[y_train == 0]) / len(y_train[y_train == 1])
 
-weight_dict = {0: weights[0], 1: weights[1]}
-
-sample_weights = y_train.map(weight_dict)
-
-# =============================
-# 🔟 XGBoost Model
-# =============================
+# ============================================================
+# 9️⃣ TRAIN MODEL
+# ============================================================
 
 model = XGBClassifier(
-    n_estimators=500,
-    max_depth=8,
-    learning_rate=0.05,
+    n_estimators=1200,
+    max_depth=5,
+    learning_rate=0.02,
     subsample=0.8,
     colsample_bytree=0.8,
+    gamma=1,
+    min_child_weight=3,
+    reg_alpha=1,
+    reg_lambda=2,
+    scale_pos_weight=scale_pos_weight,
     random_state=42,
     eval_metric="logloss"
 )
 
-model.fit(X_train, y_train, sample_weight=sample_weights)
+model.fit(X_train, y_train)
 
-# =============================
-# 1️⃣1️⃣ Evaluation
-# =============================
+# ============================================================
+# 🔟 EVALUATE
+# ============================================================
 
 y_pred = model.predict(X_test)
 
 accuracy = accuracy_score(y_test, y_pred)
-print("🔥 Final Model Accuracy:", accuracy)
 
+print("\n🔥 High Accuracy Model:", round(accuracy * 100, 2), "%")
 print("\nClassification Report:\n")
 print(classification_report(y_test, y_pred))
 
-# =============================
-# 1️⃣2️⃣ Save Model
-# =============================
+# ============================================================
+# 1️⃣1️⃣ SAVE MODEL
+# ============================================================
 
 os.makedirs("model", exist_ok=True)
+
 joblib.dump(model, "model/readmission_model.pkl")
+joblib.dump(X.columns.tolist(), "model/full_feature_list.pkl")
+joblib.dump(df.mode().iloc[0], "model/default_values.pkl")
 
 print("\n✅ Model saved successfully!")
+print("📁 Files saved inside /model folder")
