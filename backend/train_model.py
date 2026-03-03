@@ -8,27 +8,26 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report
 from xgboost import XGBClassifier
 
-# ============================================================
-# 1️⃣ LOAD DATA
-# ============================================================
+
+#LOAD DATA
+
 
 df = pd.read_csv("diabetic_data.csv")
 
-# ============================================================
-# 2️⃣ TARGET
-# ============================================================
+#TARGET
+
 
 df["readmitted"] = df["readmitted"].apply(lambda x: 0 if x == "NO" else 1)
 
-# ============================================================
-# 3️⃣ DROP ID COLUMNS
-# ============================================================
+
+#DROP ID COLUMNS
+
 
 df.drop(["encounter_id", "patient_nbr"], axis=1, inplace=True)
 
-# ============================================================
-# 4️⃣ CLEAN DATA
-# ============================================================
+
+#CLEAN DATA
+
 
 df.replace("?", np.nan, inplace=True)
 
@@ -42,26 +41,26 @@ categorical_cols = df.select_dtypes(include=["object", "string"]).columns
 df[numeric_cols] = df[numeric_cols].fillna(df[numeric_cols].median())
 df[categorical_cols] = df[categorical_cols].fillna(df[categorical_cols].mode().iloc[0])
 
-# ============================================================
-# 5️⃣ ONE HOT ENCODING
-# ============================================================
+
+#ONE HOT ENCODING
+
 
 df = pd.get_dummies(df, drop_first=True)
 
-# ============================================================
-# 6️⃣ FULL SAFE COLUMN CLEANING (VERY IMPORTANT)
-# ============================================================
+
+#  FULL SAFE COLUMN CLEANING 
+
 
 def clean_column(name):
-    # Keep only letters, numbers and underscore
+   
     name = re.sub(r'[^A-Za-z0-9_]', '_', name)
     return name
 
 df.columns = [clean_column(col) for col in df.columns]
 
-# ============================================================
-# 7️⃣ SPLIT
-# ============================================================
+
+#SPLIT
+
 
 X = df.drop("readmitted", axis=1)
 y = df["readmitted"]
@@ -74,15 +73,15 @@ X_train, X_test, y_train, y_test = train_test_split(
     stratify=y
 )
 
-# ============================================================
-# 8️⃣ HANDLE IMBALANCE
-# ============================================================
+
+#HANDLE IMBALANCE
+
 
 scale_pos_weight = len(y_train[y_train == 0]) / len(y_train[y_train == 1])
 
-# ============================================================
-# 9️⃣ TRAIN MODEL
-# ============================================================
+
+#TRAIN MODEL
+
 
 model = XGBClassifier(
     n_estimators=1200,
@@ -101,9 +100,9 @@ model = XGBClassifier(
 
 model.fit(X_train, y_train)
 
-# ============================================================
-# 🔟 EVALUATE
-# ============================================================
+
+#EVALUATE
+
 
 y_pred = model.predict(X_test)
 
@@ -113,9 +112,9 @@ print("\n🔥 High Accuracy Model:", round(accuracy * 100, 2), "%")
 print("\nClassification Report:\n")
 print(classification_report(y_test, y_pred))
 
-# ============================================================
-# 1️⃣1️⃣ SAVE MODEL
-# ============================================================
+
+#  SAVE MODEL
+
 
 os.makedirs("model", exist_ok=True)
 
@@ -124,4 +123,4 @@ joblib.dump(X.columns.tolist(), "model/full_feature_list.pkl")
 joblib.dump(df.mode().iloc[0], "model/default_values.pkl")
 
 print("\n✅ Model saved successfully!")
-print("📁 Files saved inside /model folder")
+

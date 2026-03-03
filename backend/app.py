@@ -10,9 +10,9 @@ from functools import wraps
 app = Flask(__name__)
 active_tokens = {}
 
-# ── 12 FEATURES the model was trained on (order matters!) ─────────────────
+# ── 12 FEATURES USED IN MODEL
 FEATURES = [
-    'age',               # numeric (patient age as midpoint: 5,15,25...95)
+    'age',               # numeric 
     'time_in_hospital',  # 1-14 days
     'num_lab_procedures',# 1-132
     'num_procedures',    # 0-6
@@ -26,7 +26,7 @@ FEATURES = [
     'diabetesMed',       # encoded: No=0, Yes=1
 ]
 
-# ── LOAD MODEL ────────────────────────────────────────────────────────────
+# ── LOAD MODEL 
 model_paths = [
     "readmission_model_12f.pkl",
     "readmission_model.pkl",
@@ -50,7 +50,7 @@ if model is None:
     model.fit(np.zeros((2, 12)), [0, 1])
 
 
-# ── DB INIT ───────────────────────────────────────────────────────────────
+# ── DB INIT 
 def init_db():
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
@@ -92,7 +92,7 @@ def init_db():
     conn.commit(); conn.close()
 
 
-# ── CORS ──────────────────────────────────────────────────────────────────
+# ── CORS 
 @app.after_request
 def add_cors(response):
     origin = request.headers.get("Origin", "")
@@ -116,7 +116,7 @@ def handle_preflight():
         return resp
 
 
-# ── AUTH ──────────────────────────────────────────────────────────────────
+# ── AUTH 
 def require_auth(f):
     @wraps(f)
     def wrapped(*args, **kwargs):
@@ -140,7 +140,7 @@ def require_admin(f):
     return wrapped
 
 
-# ── ROUTES ────────────────────────────────────────────────────────────────
+# ── ROUTES 
 @app.route("/")
 def home():
     return jsonify({"status": "ok", "features": len(FEATURES)})
@@ -208,7 +208,7 @@ def delete_user(uid):
 def predict():
     d = request.get_json() or {}
 
-    # Categorical encodings (must match training)
+    # Categorical encodings 
     insulin_map  = {"Down": 0, "No": 1, "Steady": 2, "Up": 3}
     change_map   = {"Ch": 0, "No": 1}
     diabetes_map = {"No": 0, "Yes": 1}
