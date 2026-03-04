@@ -4,9 +4,9 @@ from werkzeug.security import generate_password_hash
 conn = sqlite3.connect("database.db")
 c = conn.cursor()
 
-# =============================
+
 # USERS TABLE
-# =============================
+
 c.execute("""
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -17,9 +17,9 @@ CREATE TABLE IF NOT EXISTS users (
 )
 """)
 
-# =============================
-# PREDICTIONS TABLE (UPDATED with probability & timestamp)
-# =============================
+
+# PREDICTIONS TABLE 
+
 c.execute("""
 CREATE TABLE IF NOT EXISTS predictions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -35,9 +35,9 @@ CREATE TABLE IF NOT EXISTS predictions (
 )
 """)
 
-# =============================
+
 # DEFAULT ADMIN
-# =============================
+
 c.execute("SELECT * FROM users WHERE username=?", ("admin",))
 if not c.fetchone():
     hashed_password = generate_password_hash("admin123")
