@@ -12,6 +12,7 @@ active_tokens = {}
 
 # ── 12 FEATURES USED IN MODEL
 FEATURES = [
+    
     'age',               # numeric 
     'time_in_hospital',  # 1-14 days
     'num_lab_procedures',# 1-132
@@ -27,29 +28,36 @@ FEATURES = [
 ]
 
 # ── LOAD MODEL 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Possible model locations
 model_paths = [
-    "readmission_model_12f.pkl",
-    "readmission_model.pkl",
-    os.path.join(os.path.dirname(__file__), "readmission_model_12f.pkl"),
+    os.path.join(BASE_DIR, "model", "readmission_model_12f.pkl"),  # primary model
+    os.path.join(BASE_DIR, "model", "readmission_model.pkl"),      # legacy model
+    os.path.join(BASE_DIR, "readmission_model_12f.pkl"),           # fallback root
+    os.path.join(BASE_DIR, "readmission_model.pkl"),               # fallback root
 ]
+
 model = None
+
 for path in model_paths:
+    print("Checking model path:", path)
     try:
         if os.path.exists(path):
             model = joblib.load(path)
-            n = getattr(model, 'n_features_in_', '?')
-            print(f"✅ Model loaded: {path}  (expects {n} features)")
+            n = getattr(model, "n_features_in_", "?")
+            print(f"✅ Model loaded: {path} (expects {n} features)")
             break
     except Exception as e:
-        print(f"   skip {path}: {e}")
+        print(f"⚠️ Skip {path}: {e}")
 
+# Fallback dummy model if nothing found
 if model is None:
-    print("⚠️  Using fallback dummy model")
+    print("⚠️ Using fallback dummy model")
     from sklearn.ensemble import RandomForestClassifier
+
     model = RandomForestClassifier(n_estimators=10, random_state=42)
     model.fit(np.zeros((2, 12)), [0, 1])
-
-
 # ── DB INIT 
 def init_db():
     conn = sqlite3.connect("database.db")
@@ -143,7 +151,7 @@ def require_admin(f):
 # ── ROUTES 
 @app.route("/")
 def home():
-    return jsonify({"status": "ok", "features": len(FEATURES)})
+    return "🚀 Healthcare Readmission API is running!"
 
 @app.route("/register", methods=["POST"])
 def register():

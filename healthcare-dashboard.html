@@ -47,7 +47,7 @@
     ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 99px; }
 
     /* ══════════════════════════════
-       LOGIN
+       #LOGIN
     ══════════════════════════════ */
     .auth-scene {
       min-height: 100vh;
@@ -791,7 +791,6 @@
 
   const API = "http://localhost:5000";
 
-  // ─── IN-MEMORY TOKEN STORE (no localStorage needed) ──────────
   let _token = null;
 
   const api = (path, opts = {}) => {
@@ -809,7 +808,6 @@
     });
   };
 
-  // ─── TOAST ────────────────────────────────────────────────────
   function Toast({ msg, type, onClose }) {
     useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t); }, []);
     return (
@@ -819,7 +817,6 @@
     );
   }
 
-  // ─── CHART HELPERS ────────────────────────────────────────────
   function useChart(ref, cfg, deps) {
     const inst = useRef(null);
     useEffect(() => {
@@ -831,9 +828,7 @@
     }, deps);
   }
 
-  // ══════════════════════════════
-  //  AUTH
-  // ══════════════════════════════
+  // AUTH
   function AuthPage({ onLogin, showToast }) {
     const [mode, setMode] = useState("login");
     const [form, setForm] = useState({ username:"", password:"", role:"user" });
@@ -910,9 +905,7 @@
     );
   }
 
-  // ══════════════════════════════
-  //  SIDEBAR
-  // ══════════════════════════════
+  // SIDEBAR
   function Sidebar({ user, tab, setTab, onLogout }) {
     const items = [
       { key:"dashboard", icon:"📊", label:"Dashboard" },
@@ -956,9 +949,7 @@
     );
   }
 
-  // ══════════════════════════════
-  //  DASHBOARD
-  // ══════════════════════════════
+  // DASHBOARD
   function Dashboard({ user, showToast }) {
     const [stats, setStats] = useState(null);
     const donutRef = useRef(null);
@@ -1080,9 +1071,7 @@
     );
   }
 
-  // ══════════════════════════════
-  //  PREDICT
-  // ══════════════════════════════
+  // PREDICT
   function Predict({ showToast }) {
     const [vals, setVals] = useState({
       age: 55,
@@ -1221,9 +1210,7 @@
     );
   }
 
-  // ══════════════════════════════
-  //  HISTORY
-  // ══════════════════════════════
+  // HISTORY
   function History({ showToast }) {
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -1299,9 +1286,7 @@
     );
   }
 
-  // ══════════════════════════════
-  //  MODEL METRICS
-  // ══════════════════════════════
+  // METRICS
   function ModelMetrics({ showToast }) {
     const [metrics, setMetrics] = useState(null);
     const rocRef = useRef(null);
@@ -1450,9 +1435,7 @@
     );
   }
 
-  // ══════════════════════════════
-  //  USER MANAGEMENT
-  // ══════════════════════════════
+  // USERS
   function Users({ showToast }) {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -1568,9 +1551,7 @@
     );
   }
 
-  // ──────────────────────────────────────────────────────────────
-  //  SERVER STATUS BANNER
-  // ──────────────────────────────────────────────────────────────
+  // SERVER
   function ServerBanner() {
     const [status, setStatus] = useState("checking");
     useEffect(() => {
