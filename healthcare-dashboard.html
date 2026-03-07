@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MedAI — Readmission Intelligence Platform</title>
+  <title>Healthcare-Readmission-Prediction-AI Model</title>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -46,9 +46,7 @@
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 99px; }
 
-    /* ══════════════════════════════
-       #LOGIN
-    ══════════════════════════════ */
+    /*#LOGIN*/
     .auth-scene {
       min-height: 100vh;
       display: flex;
@@ -196,9 +194,7 @@
     .toast-error   { background: #450a0a; border: 1px solid var(--danger);  color: #fca5a5; }
     .toast-info    { background: #1e3a5f; border: 1px solid var(--accent);  color: #93c5fd; }
 
-    /* ══════════════════════════════
-       APP SHELL
-    ══════════════════════════════ */
+    /*SHELL*/
     .shell {
       display: flex;
       min-height: 100vh;
@@ -404,9 +400,7 @@
       margin-bottom: 24px;
     }
 
-    /* ══════════════════════════════
-       DASHBOARD
-    ══════════════════════════════ */
+    /*DASHBOARD*/
     .kpi-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -473,9 +467,7 @@
       height: 280px;
     }
 
-    /* ══════════════════════════════
-       MODEL METRICS
-    ══════════════════════════════ */
+    /*METRICS*/
     .metric-bar-row {
       display: flex;
       align-items: center;
@@ -542,9 +534,7 @@
     .cm-cell.fn .cm-val { color: #fb923c; }
     .cm-cell.tp .cm-val { color: #60a5fa; }
 
-    /* ══════════════════════════════
-       PREDICT
-    ══════════════════════════════ */
+    /*PREDICT*/
     .predict-layout {
       display: grid;
       grid-template-columns: 1fr 380px;
@@ -677,9 +667,7 @@
     .recommend-box li { font-size: 0.84rem; color: var(--text-dim); display: flex; gap: 8px; align-items: flex-start; }
     .recommend-box li::before { content: '→'; color: var(--accent); flex-shrink: 0; font-weight: 700; }
 
-    /* ══════════════════════════════
-       HISTORY TABLE
-    ══════════════════════════════ */
+    /*HISTORY*/
     .table-wrap {
       overflow-x: auto;
       border-radius: var(--radius);
@@ -724,9 +712,7 @@
     .badge-admin   { background: rgba(139,92,246,0.12); color: #a78bfa; border: 1px solid rgba(139,92,246,0.25); }
     .badge-user    { background: rgba(6,182,212,0.12);  color: #22d3ee; border: 1px solid rgba(6,182,212,0.25); }
 
-    /* ══════════════════════════════
-       USER MANAGEMENT
-    ══════════════════════════════ */
+    /*USERS*/
     .del-btn {
       background: none;
       border: 1px solid rgba(239,68,68,0.25);
@@ -742,9 +728,7 @@
 
     .del-btn:hover { background: rgba(239,68,68,0.1); border-color: var(--danger); }
 
-    /* ══════════════════════════════
-       LOADING
-    ══════════════════════════════ */
+    /*LOADING*/
     .spinner {
       width: 36px; height: 36px;
       border: 3px solid rgba(255,255,255,0.08);
@@ -765,9 +749,7 @@
     .empty-state .emoji { font-size: 3rem; margin-bottom: 12px; }
     .empty-state p { font-size: 0.95rem; }
 
-    /* ══════════════════════════════
-       RESPONSIVE
-    ══════════════════════════════ */
+    /*RESPONSIVE*/
     @media (max-width: 900px) {
       .kpi-grid { grid-template-columns: 1fr 1fr; }
       .charts-grid { grid-template-columns: 1fr; }
@@ -791,6 +773,7 @@
 
   const API = "http://localhost:5000";
 
+  //TOKEN
   let _token = null;
 
   const api = (path, opts = {}) => {
@@ -808,6 +791,7 @@
     });
   };
 
+  //TOAST
   function Toast({ msg, type, onClose }) {
     useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t); }, []);
     return (
@@ -817,6 +801,7 @@
     );
   }
 
+  //CHARTS
   function useChart(ref, cfg, deps) {
     const inst = useRef(null);
     useEffect(() => {
@@ -828,7 +813,7 @@
     }, deps);
   }
 
-  // AUTH
+  //AUTH
   function AuthPage({ onLogin, showToast }) {
     const [mode, setMode] = useState("login");
     const [form, setForm] = useState({ username:"", password:"", role:"user" });
@@ -862,7 +847,7 @@
       <div className="auth-scene">
         <div className="auth-card">
           <div className="auth-logo">🏥</div>
-          <h1>MedAI Platform</h1>
+          <h1>Healthcare-Readmission-Prediction-AI Model</h1>
           <p>{mode === "login" ? "Sign in to your workspace" : "Create your account"}</p>
 
           <div className="field">
@@ -905,7 +890,7 @@
     );
   }
 
-  // SIDEBAR
+  //SIDEBAR
   function Sidebar({ user, tab, setTab, onLogout }) {
     const items = [
       { key:"dashboard", icon:"📊", label:"Dashboard" },
@@ -920,8 +905,8 @@
         <div className="sidebar-brand">
           <div className="brand-icon">🏥</div>
           <div>
-            <div className="brand-name">MedAI</div>
-            <div className="brand-sub">Readmission Intel</div>
+            <div className="brand-name">HR-Prediction-AI</div>
+            <div className="brand-sub">Readmission Model</div>
           </div>
         </div>
 
@@ -949,7 +934,7 @@
     );
   }
 
-  // DASHBOARD
+  //DASHBOARD
   function Dashboard({ user, showToast }) {
     const [stats, setStats] = useState(null);
     const donutRef = useRef(null);
@@ -1071,7 +1056,7 @@
     );
   }
 
-  // PREDICT
+  //PREDICT
   function Predict({ showToast }) {
     const [vals, setVals] = useState({
       age: 55,
@@ -1210,7 +1195,7 @@
     );
   }
 
-  // HISTORY
+  //HISTORY
   function History({ showToast }) {
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -1286,7 +1271,7 @@
     );
   }
 
-  // METRICS
+  //METRICS
   function ModelMetrics({ showToast }) {
     const [metrics, setMetrics] = useState(null);
     const rocRef = useRef(null);
@@ -1435,7 +1420,7 @@
     );
   }
 
-  // USERS
+  //USERS
   function Users({ showToast }) {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -1551,7 +1536,7 @@
     );
   }
 
-  // SERVER
+  //SERVERBANNER
   function ServerBanner() {
     const [status, setStatus] = useState("checking");
     useEffect(() => {
@@ -1612,7 +1597,7 @@
         <Sidebar user={user} tab={tab} setTab={setTab} onLogout={handleLogout} />
         <div className="main">
           <div className="topbar">
-            <h2>{titles[tab] || "MedAI"}</h2>
+            <h2>{titles[tab] || "HR-Prediction-AI"}</h2>
             <div className="topbar-meta">
               <div className="status-dot"></div>
               Backend connected &nbsp;·&nbsp; {new Date().toLocaleDateString("en-US", { weekday:"short", month:"short", day:"numeric" })}
