@@ -481,4 +481,7 @@ if __name__ == "__main__":
     print(f" 🤖 Model   : {'XGBoost (trained)' if model else 'Clinical Scoring Fallback'}")
     print(" 🔐 Admin   : admin / admin123")
     print("="*60+"\n")
-    app.run(host="0.0.0.0",port=5000,debug=True)
+    #app.run(host="0.0.0.0",port=5000,debug=True)
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
+  
