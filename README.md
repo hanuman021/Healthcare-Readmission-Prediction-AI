@@ -15,4 +15,4 @@ Project Structure
 How to Run
 1. Install requirements
 2. Run backend (app.py)
-3. Open frontend predict.html
+3. Open frontend healthcare-dashboard.html
