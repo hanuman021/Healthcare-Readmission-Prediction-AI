@@ -474,14 +474,15 @@ def model_metrics():
         ]
     })
 
+# Called at import time so gunicorn (Render) also initialises the DB
+init_db()
+
 if __name__ == "__main__":
-    init_db()
     print("\n"+"="*60)
     print(" 🏥  Healthcare Readmission Prediction API v3.0")
     print(f" 🤖 Model   : {'XGBoost (trained)' if model else 'Clinical Scoring Fallback'}")
     print(" 🔐 Admin   : admin / admin123")
     print("="*60+"\n")
-    #app.run(host="0.0.0.0",port=5000,debug=True)
     port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=port, debug=False)
   

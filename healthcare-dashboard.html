@@ -724,11 +724,11 @@
 <div id="root"></div>
 <script type="text/babel">
   const { useState, useEffect, useRef, useCallback } = React;
-  const API = "http://localhost:5000";
+  const BASE_URL = "https://healthcare-readmission-prediction-ai.onrender.com";
   let _token = null;
 
   //TOKEN
-  const api = (path, opts={}) => fetch(`${API}${path}`, {
+  const api = (path, opts={}) => fetch(`${BASE_URL}${path}`, {
     ...opts,
     headers: {
       "Content-Type":"application/json",
@@ -802,7 +802,7 @@
           showToast("Account created! Please log in.","success");
           setMode("login");
         } else { showToast(data.message||"Something went wrong","error"); }
-      } catch { showToast("Cannot reach server. Make sure Flask is running on port 5000.","error"); }
+      } catch { showToast("Cannot reach server. Render may be waking up — wait 30s and retry.","error"); }
       setLoading(false);
     };
 
@@ -1805,7 +1805,7 @@
   function ServerBanner() {
     const [status,setStatus] = useState("checking");
     useEffect(()=>{
-      fetch(`${API}/`,{method:"GET"})
+      fetch(`${BASE_URL}/`,{method:"GET"})
         .then(r=>r.ok?setStatus("ok"):setStatus("error"))
         .catch(()=>setStatus("error"));
     },[]);
@@ -1819,8 +1819,8 @@
         color:status==="checking"?"#1d4ed8":"#991b1b"
       }}>
         {status==="checking"
-          ?"⏳ Connecting to Flask backend on localhost:5000…"
-          :"❌ Flask backend not found. Run: python app.py  — then refresh."}
+          ?"⏳ Connecting to backend on Render…"
+          :"❌ Backend unreachable. Render service may be sleeping — wait 30s and refresh."}
       </div>
     );
   }
