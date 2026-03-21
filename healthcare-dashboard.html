@@ -56,47 +56,68 @@
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(2,132,199,0.2); border-radius: 99px; }
 
-    /*LOGIN*/
+    /*LOGIN — 3D hospital scene*/
     .auth-scene {
       min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background:
-        linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 40%, #ccfbf1 100%);
+      display: grid;
+      grid-template-columns: 1fr 460px;
       position: relative;
       overflow: hidden;
+      background: linear-gradient(135deg,#050d1a 0%,#091628 40%,#061a1a 100%);
     }
 
-    .auth-scene::before {
-      content: '';
-      position: absolute;
-      top: -20%; left: -10%;
-      width: 500px; height: 500px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(2,132,199,0.08), transparent 70%);
+    #medCanvas {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
     }
 
-    .auth-scene::after {
-      content: '';
-      position: absolute;
-      bottom: -15%; right: -5%;
-      width: 400px; height: 400px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(13,148,136,0.08), transparent 70%);
+    .auth-left {
+      position: relative;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 2; padding: 40px;
+    }
+
+    .auth-left-content {
+      text-align: center; pointer-events: none; max-width: 400px;
+    }
+
+    .auth-left-content h2 {
+      font-size: 2.4rem; font-weight: 800; color: #fff;
+      letter-spacing: -1px; line-height: 1.15; margin-bottom: 14px;
+      text-shadow: 0 2px 30px rgba(0,0,0,0.5);
+    }
+
+    .auth-left-content h2 em { font-style: normal; color: #22d3ee; }
+
+    .auth-left-content p {
+      font-size: 0.95rem; color: rgba(255,255,255,0.55);
+      line-height: 1.65; max-width: 320px; margin: 0 auto;
+    }
+
+    /* right: glassmorphism card */
+    .auth-right {
+      position: relative; z-index: 2;
+      display: flex; align-items: center; justify-content: center;
+      padding: 40px 36px;
+      background: rgba(255,255,255,0.04);
+      border-left: 1px solid rgba(255,255,255,0.07);
+      backdrop-filter: blur(24px);
     }
 
     .auth-card {
-      width: 100%;
-      max-width: 440px;
-      padding: 44px 44px 40px;
-      background: white;
-      border: 1px solid rgba(2,132,199,0.12);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-lg);
-      animation: fadeUp 0.45s ease;
-      position: relative;
-      z-index: 1;
+      width: 100%; max-width: 380px;
+      padding: 38px 36px 32px;
+      background: rgba(8,20,40,0.82);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.07);
+      animation: slideInCard 0.65s cubic-bezier(0.22,1,0.36,1);
+      backdrop-filter: blur(12px);
+    }
+
+    @keyframes slideInCard {
+      from { opacity:0; transform: translateX(50px) rotateY(-6deg); }
+      to   { opacity:1; transform: translateX(0) rotateY(0); }
     }
 
     @keyframes fadeUp {
@@ -105,29 +126,70 @@
     }
 
     .auth-logo {
-      width: 56px; height: 56px;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      width: 52px; height: 52px;
+      background: linear-gradient(135deg,#0ea5e9,#06b6d4);
       border-radius: 14px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 28px;
-      margin-bottom: 20px;
-      box-shadow: 0 6px 20px var(--accent-glow);
+      font-size: 26px; margin-bottom: 18px;
+      box-shadow: 0 6px 24px rgba(14,165,233,0.4);
     }
 
     .auth-card h1 {
-      font-size: 1.4rem;
-      font-weight: 700;
-      color: var(--text);
-      letter-spacing: -0.4px;
-      margin-bottom: 4px;
-      line-height: 1.3;
+      font-size: 1.25rem; font-weight: 700;
+      color: #f0f9ff; letter-spacing: -0.3px;
+      margin-bottom: 4px; line-height: 1.3;
     }
 
     .auth-card > p {
-      color: var(--text-muted);
-      font-size: 0.88rem;
-      margin-bottom: 28px;
+      color: rgba(148,185,220,0.8);
+      font-size: 0.85rem; margin-bottom: 24px;
     }
+
+    /* Override field styles for dark card */
+    .auth-card .field label {
+      color: rgba(186,219,246,0.7);
+    }
+
+    .auth-card .field input {
+      background: rgba(255,255,255,0.06);
+      border-color: rgba(255,255,255,0.1);
+      color: #f0f9ff;
+    }
+
+    .auth-card .field input::placeholder { color: rgba(148,185,220,0.4); }
+
+    .auth-card .field input:focus {
+      border-color: #22d3ee;
+      box-shadow: 0 0 0 3px rgba(34,211,238,0.15);
+      background: rgba(255,255,255,0.09);
+    }
+
+    .auth-card .field select {
+      background: rgba(255,255,255,0.06);
+      border-color: rgba(255,255,255,0.1);
+      color: #f0f9ff;
+    }
+
+    .auth-card .field select option { background: #0d2040; color: #f0f9ff; }
+
+    .auth-card .btn-primary {
+      background: linear-gradient(135deg,#0ea5e9,#06b6d4);
+      box-shadow: 0 4px 20px rgba(14,165,233,0.4);
+    }
+    .auth-card .btn-primary:hover { box-shadow: 0 6px 28px rgba(14,165,233,0.55); }
+
+    .auth-card .btn-google {
+      background: rgba(255,255,255,0.07);
+      border-color: rgba(255,255,255,0.12);
+      color: rgba(240,249,255,0.85);
+    }
+    .auth-card .btn-google:hover { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.2); }
+
+    .auth-card .divider { color: rgba(148,185,220,0.5); }
+    .auth-card .divider::before,.auth-card .divider::after { background: rgba(255,255,255,0.08); }
+
+    .auth-card .auth-toggle { color: rgba(148,185,220,0.6); }
+    .auth-card .auth-toggle span { color: #22d3ee; }
 
     .field { margin-bottom: 16px; }
     .field label {
@@ -786,78 +848,348 @@
     const [mode,setMode] = useState("login");
     const [form,setForm] = useState({username:"",password:"",role:"user"});
     const [loading,setLoading] = useState(false);
+    const canvasRef = useRef(null);
+    const rafRef = useRef(null);
     const set = k=>e=>setForm(f=>({...f,[k]:e.target.value}));
 
-    const submit = async()=>{
+    // ══ 3D Canvas — floating medical instruments ══
+    useEffect(()=>{
+      const cv = canvasRef.current; if(!cv) return;
+      const ctx = cv.getContext("2d");
+      let W,H;
+      const resize=()=>{ W=cv.width=cv.offsetWidth; H=cv.height=cv.offsetHeight; };
+      resize(); window.addEventListener("resize",resize);
+
+      // ── Medical instrument drawers ──
+      const drawStethoscope=(cx,cy,s,a,op,hue)=>{
+        ctx.save(); ctx.globalAlpha=op; ctx.translate(cx,cy); ctx.rotate(a);
+        const c=`hsl(${hue},80%,65%)`;
+        ctx.strokeStyle=c; ctx.lineWidth=s*0.09; ctx.lineCap="round";
+        // chest piece circle
+        ctx.beginPath(); ctx.arc(0,s*0.32,s*0.22,0,Math.PI*2); ctx.stroke();
+        // tube going up and splitting
+        ctx.beginPath();
+        ctx.moveTo(-s*0.12,s*0.1); ctx.bezierCurveTo(-s*0.15,-s*0.05,-s*0.32,-s*0.1,-s*0.38,-s*0.28);
+        ctx.moveTo(s*0.12,s*0.1); ctx.bezierCurveTo(s*0.15,-s*0.05,s*0.32,-s*0.1,s*0.38,-s*0.28);
+        ctx.moveTo(-s*0.38,-s*0.28); ctx.bezierCurveTo(-s*0.22,-s*0.52,s*0.22,-s*0.52,s*0.38,-s*0.28);
+        ctx.stroke();
+        // earpieces
+        ctx.fillStyle=c;
+        ctx.beginPath(); ctx.arc(-s*0.38,-s*0.28,s*0.07,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(s*0.38,-s*0.28,s*0.07,0,Math.PI*2); ctx.fill();
+        // membrane
+        ctx.fillStyle=`hsla(${hue},70%,75%,0.3)`;
+        ctx.beginPath(); ctx.arc(0,s*0.32,s*0.2,0,Math.PI*2); ctx.fill();
+        ctx.restore();
+      };
+
+      const drawThermometer=(cx,cy,s,a,op,hue)=>{
+        ctx.save(); ctx.globalAlpha=op; ctx.translate(cx,cy); ctx.rotate(a);
+        // body
+        ctx.strokeStyle=`hsl(${hue},70%,68%)`; ctx.lineWidth=s*0.12; ctx.lineCap="round";
+        ctx.beginPath(); ctx.moveTo(0,-s*0.42); ctx.lineTo(0,s*0.15); ctx.stroke();
+        // bulb
+        ctx.fillStyle=`hsl(${hue},90%,60%)`;
+        ctx.beginPath(); ctx.arc(0,s*0.28,s*0.18,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle=`hsla(${hue},90%,60%,0.35)`;
+        ctx.beginPath(); ctx.arc(0,s*0.28,s*0.18,0,Math.PI*2); ctx.fill();
+        // mercury line
+        ctx.strokeStyle=`hsl(${hue},90%,60%)`; ctx.lineWidth=s*0.07;
+        ctx.beginPath(); ctx.moveTo(0,s*0.15); ctx.lineTo(0,-s*0.15); ctx.stroke();
+        // tick marks
+        ctx.strokeStyle=`hsl(${hue},50%,75%)`; ctx.lineWidth=s*0.04;
+        for(let i=0;i<4;i++){
+          const ty=-s*0.05-i*s*0.12;
+          ctx.beginPath(); ctx.moveTo(s*0.08,ty); ctx.lineTo(s*0.16,ty); ctx.stroke();
+        }
+        ctx.restore();
+      };
+
+      const drawOtoscope=(cx,cy,s,a,op,hue)=>{
+        ctx.save(); ctx.globalAlpha=op; ctx.translate(cx,cy); ctx.rotate(a);
+        const c=`hsl(${hue},75%,62%)`;
+        ctx.strokeStyle=c; ctx.lineWidth=s*0.09; ctx.lineCap="round";
+        // handle — elongated body
+        ctx.fillStyle=`hsla(${hue},70%,40%,0.5)`;
+        ctx.beginPath(); ctx.roundRect(-s*0.1,-s*0.1,s*0.2,s*0.55,s*0.08);
+        ctx.fill(); ctx.stroke();
+        // head (viewing cone)
+        ctx.beginPath();
+        ctx.moveTo(-s*0.18,-s*0.42); ctx.lineTo(s*0.18,-s*0.42);
+        ctx.lineTo(s*0.09,-s*0.1); ctx.lineTo(-s*0.09,-s*0.1); ctx.closePath();
+        ctx.fillStyle=`hsla(${hue},60%,55%,0.4)`; ctx.fill(); ctx.stroke();
+        // lens glow
+        ctx.fillStyle=`hsla(${hue},90%,80%,0.6)`;
+        ctx.beginPath(); ctx.ellipse(0,-s*0.42,s*0.09,s*0.05,0,0,Math.PI*2); ctx.fill();
+        ctx.restore();
+      };
+
+      const drawECG=(cx,cy,s,a,op,hue)=>{
+        ctx.save(); ctx.globalAlpha=op; ctx.translate(cx,cy); ctx.rotate(a);
+        // monitor screen background
+        ctx.fillStyle=`hsla(${hue},40%,15%,0.6)`;
+        ctx.strokeStyle=`hsl(${hue},70%,55%)`; ctx.lineWidth=s*0.06;
+        ctx.beginPath(); ctx.roundRect(-s*0.45,-s*0.32,s*0.9,s*0.55,s*0.07);
+        ctx.fill(); ctx.stroke();
+        // ECG waveform
+        ctx.strokeStyle=`hsl(${hue},90%,65%)`; ctx.lineWidth=s*0.055; ctx.lineCap="round"; ctx.lineJoin="round";
+        ctx.shadowColor=`hsl(${hue},90%,65%)`; ctx.shadowBlur=s*0.15;
+        ctx.beginPath();
+        const pts=[[-0.4,0.05],[-0.25,0.05],[-0.18,-0.02],[-0.12,-0.18],[-0.06,0.18],[0,0.05],[0.06,0.05],[0.12,-0.22],[0.18,0.18],[0.24,0.05],[0.4,0.05]];
+        ctx.moveTo(pts[0][0]*s,pts[0][1]*s);
+        pts.slice(1).forEach(([x,y])=>ctx.lineTo(x*s,y*s));
+        ctx.stroke(); ctx.shadowBlur=0;
+        // stand
+        ctx.strokeStyle=`hsl(${hue},40%,55%)`; ctx.lineWidth=s*0.07; ctx.shadowBlur=0;
+        ctx.beginPath(); ctx.moveTo(0,s*0.23); ctx.lineTo(0,s*0.42);
+        ctx.moveTo(-s*0.18,s*0.42); ctx.lineTo(s*0.18,s*0.42); ctx.stroke();
+        ctx.restore();
+      };
+
+      const drawMedKit=(cx,cy,s,a,op,hue)=>{
+        ctx.save(); ctx.globalAlpha=op; ctx.translate(cx,cy); ctx.rotate(a);
+        // box
+        ctx.fillStyle=`hsla(${hue},75%,35%,0.45)`;
+        ctx.strokeStyle=`hsl(${hue},75%,62%)`; ctx.lineWidth=s*0.08;
+        ctx.beginPath(); ctx.roundRect(-s*0.38,-s*0.28,s*0.76,s*0.56,s*0.08);
+        ctx.fill(); ctx.stroke();
+        // handle
+        ctx.strokeStyle=`hsl(${hue},65%,68%)`; ctx.lineWidth=s*0.07;
+        ctx.beginPath(); ctx.moveTo(-s*0.15,-s*0.28); ctx.lineTo(-s*0.15,-s*0.42);
+        ctx.arc(0,-s*0.42,s*0.15,Math.PI,0);
+        ctx.lineTo(s*0.15,-s*0.28); ctx.stroke();
+        // cross
+        ctx.strokeStyle=`hsl(${hue},85%,72%)`; ctx.lineWidth=s*0.11; ctx.lineCap="round";
+        ctx.beginPath(); ctx.moveTo(-s*0.18,0); ctx.lineTo(s*0.18,0); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0,-s*0.16); ctx.lineTo(0,s*0.16); ctx.stroke();
+        ctx.restore();
+      };
+
+      const drawSyringe=(cx,cy,s,a,op,hue)=>{
+        ctx.save(); ctx.globalAlpha=op; ctx.translate(cx,cy); ctx.rotate(a);
+        const c=`hsl(${hue},70%,68%)`;
+        ctx.strokeStyle=c; ctx.lineWidth=s*0.08; ctx.lineCap="round";
+        // barrel
+        ctx.fillStyle=`hsla(${hue},60%,60%,0.2)`;
+        ctx.beginPath(); ctx.roundRect(-s*0.1,-s*0.38,s*0.2,s*0.6,s*0.04);
+        ctx.fill(); ctx.stroke();
+        // plunger
+        ctx.beginPath(); ctx.moveTo(0,-s*0.38); ctx.lineTo(0,-s*0.52);
+        ctx.moveTo(-s*0.08,-s*0.48); ctx.lineTo(s*0.08,-s*0.48); ctx.stroke();
+        // needle
+        ctx.strokeStyle=`hsl(${hue},50%,75%)`; ctx.lineWidth=s*0.04;
+        ctx.beginPath(); ctx.moveTo(0,s*0.22); ctx.lineTo(0,s*0.48); ctx.stroke();
+        // liquid fill
+        ctx.fillStyle=`hsla(${hue},80%,65%,0.5)`;
+        ctx.beginPath(); ctx.roundRect(-s*0.07,-s*0.1,s*0.14,s*0.2,s*0.03); ctx.fill();
+        ctx.restore();
+      };
+
+      const drawBloodPressure=(cx,cy,s,a,op,hue)=>{
+        ctx.save(); ctx.globalAlpha=op; ctx.translate(cx,cy); ctx.rotate(a);
+        // cuff (oval shape)
+        ctx.strokeStyle=`hsl(${hue},70%,60%)`; ctx.lineWidth=s*0.08;
+        ctx.fillStyle=`hsla(${hue},60%,40%,0.3)`;
+        ctx.beginPath(); ctx.ellipse(0,-s*0.05,s*0.36,s*0.2,0,0,Math.PI*2);
+        ctx.fill(); ctx.stroke();
+        // gauge circle
+        ctx.fillStyle=`hsla(${hue},40%,20%,0.6)`;
+        ctx.strokeStyle=`hsl(${hue},70%,60%)`; ctx.lineWidth=s*0.07;
+        ctx.beginPath(); ctx.arc(0,s*0.3,s*0.22,0,Math.PI*2); ctx.fill(); ctx.stroke();
+        // gauge needle
+        ctx.strokeStyle=`hsl(${hue},90%,68%)`; ctx.lineWidth=s*0.05; ctx.lineCap="round";
+        ctx.beginPath(); ctx.moveTo(0,s*0.3); ctx.lineTo(s*0.16,s*0.17); ctx.stroke();
+        // gauge arc
+        ctx.strokeStyle=`hsl(${hue},70%,55%)`; ctx.lineWidth=s*0.04;
+        ctx.beginPath(); ctx.arc(0,s*0.3,s*0.16,-Math.PI*0.75,Math.PI*-0.05); ctx.stroke();
+        // tube
+        ctx.strokeStyle=`hsl(${hue},50%,55%)`; ctx.lineWidth=s*0.06;
+        ctx.beginPath(); ctx.moveTo(-s*0.24,s*0.08); ctx.bezierCurveTo(-s*0.28,s*0.2,-s*0.2,s*0.22,-s*0.18,s*0.3); ctx.stroke();
+        ctx.restore();
+      };
+
+      const drawers = [drawStethoscope,drawThermometer,drawOtoscope,drawECG,drawMedKit,drawSyringe,drawBloodPressure];
+      const hues = [185,10,270,140,0,210,45]; // cyan, red, purple, green, red, blue, orange
+
+      // spawn instruments
+      const items=[];
+      for(let i=0;i<22;i++){
+        const idx=i%drawers.length;
+        items.push({
+          x:Math.random()*100, y:Math.random()*110,
+          z:0.25+Math.random()*0.75,
+          vx:(Math.random()-0.5)*0.014,
+          vy:-(0.007+Math.random()*0.018),
+          va:(Math.random()-0.5)*0.003,
+          angle:Math.random()*Math.PI*2,
+          size:22+Math.random()*30,
+          draw:drawers[idx], hue:hues[idx],
+          opacity:0.18+Math.random()*0.42,
+        });
+      }
+
+      // small sparkle particles
+      const sparks=[];
+      for(let i=0;i<60;i++){
+        sparks.push({
+          x:Math.random()*100,y:Math.random()*100,
+          r:0.6+Math.random()*1.8,
+          vx:(Math.random()-0.5)*0.025, vy:-(0.015+Math.random()*0.035),
+          op:0.12+Math.random()*0.4,
+          h:[185,270,140,210,45][Math.floor(Math.random()*5)]
+        });
+      }
+
+      // perspective grid (hospital floor)
+      const drawGrid=()=>{
+        const vx=W*0.5, vy=H*0.4;
+        ctx.strokeStyle="rgba(34,211,238,0.05)"; ctx.lineWidth=1;
+        for(let i=-14;i<=14;i++){
+          ctx.beginPath(); ctx.moveTo(vx,vy); ctx.lineTo(vx+i*(W*0.065),H*1.05); ctx.stroke();
+        }
+        for(let j=0;j<9;j++){
+          const t=(j/9); const y=vy+(H*1.05-vy)*t*t;
+          const sp=vx*t;
+          ctx.beginPath(); ctx.moveTo(vx-sp,y); ctx.lineTo(vx+sp,y); ctx.stroke();
+        }
+      };
+
+      const frame=()=>{
+        ctx.clearRect(0,0,W,H);
+
+        // ambient glow
+        const g1=ctx.createRadialGradient(W*0.38,H*0.5,0,W*0.38,H*0.5,W*0.55);
+        g1.addColorStop(0,"rgba(14,165,233,0.1)");
+        g1.addColorStop(0.55,"rgba(6,182,212,0.04)");
+        g1.addColorStop(1,"transparent");
+        ctx.fillStyle=g1; ctx.fillRect(0,0,W,H);
+
+        const g2=ctx.createRadialGradient(W*0.7,H*0.25,0,W*0.7,H*0.25,W*0.35);
+        g2.addColorStop(0,"rgba(124,58,237,0.07)");
+        g2.addColorStop(1,"transparent");
+        ctx.fillStyle=g2; ctx.fillRect(0,0,W,H);
+
+        drawGrid();
+
+        // sparkles
+        sparks.forEach(p=>{
+          p.x+=p.vx; p.y+=p.vy;
+          if(p.y<-2) p.y=102; if(p.x<-2) p.x=102; if(p.x>102) p.x=-2;
+          ctx.save(); ctx.globalAlpha=p.op;
+          ctx.fillStyle=`hsl(${p.h},80%,70%)`; ctx.beginPath();
+          ctx.arc(p.x/100*W,p.y/100*H,p.r,0,Math.PI*2); ctx.fill(); ctx.restore();
+        });
+
+        // instruments (sorted far→near)
+        items.sort((a,b)=>a.z-b.z).forEach(it=>{
+          it.x+=it.vx; it.y+=it.vy; it.angle+=it.va;
+          if(it.y<-18) { it.y=110; it.x=Math.random()*100; }
+          if(it.x<-18) it.x=112; if(it.x>118) it.x=-12;
+          it.draw(it.x/100*W, it.y/100*H, it.size*it.z, it.angle, it.opacity*(0.4+it.z*0.6), it.hue);
+        });
+
+        // scan line
+        const t=Date.now()*0.0007;
+        const sy=(Math.sin(t)*0.5+0.5)*H;
+        const sg=ctx.createLinearGradient(0,sy-28,0,sy+28);
+        sg.addColorStop(0,"transparent");
+        sg.addColorStop(0.5,"rgba(34,211,238,0.035)");
+        sg.addColorStop(1,"transparent");
+        ctx.fillStyle=sg; ctx.fillRect(0,sy-28,W,56);
+
+        rafRef.current=requestAnimationFrame(frame);
+      };
+      frame();
+
+      return()=>{ window.removeEventListener("resize",resize); if(rafRef.current) cancelAnimationFrame(rafRef.current); };
+    },[]);
+
+    const submit=async()=>{
       if(!form.username||!form.password){showToast("Fill in all fields","error");return;}
       setLoading(true);
       try{
-        const endpoint = mode==="login"?"/login":"/register";
-        const data = await api(endpoint,{method:"POST",body:JSON.stringify(form)});
+        const endpoint=mode==="login"?"/login":"/register";
+        const data=await api(endpoint,{method:"POST",body:JSON.stringify(form)});
         if(mode==="login"&&data.token){
-          _token=data.token;
-          onLogin({username:data.username,role:data.role});
+          _token=data.token; onLogin({username:data.username,role:data.role});
           showToast(`Welcome back, ${data.username}!`,"success");
         } else if(mode==="register"&&data.message==="User registered successfully"){
-          showToast("Account created! Please log in.","success");
-          setMode("login");
+          showToast("Account created! Please log in.","success"); setMode("login");
         } else { showToast(data.message||"Something went wrong","error"); }
       } catch { showToast("Cannot reach server. Render may be waking up — wait 30s and retry.","error"); }
       setLoading(false);
     };
 
-    const handleGoogleLogin = ()=>{
-      showToast("Google OAuth requires a Client ID configured in app.py. See README.","info");
-      // For production: window.location.href = `${API}/auth/google`;
-    };
+    const handleGoogleLogin=()=>showToast("Google OAuth requires a Client ID in app.py.","info");
 
     return (
       <div className="auth-scene">
-        <div className="auth-card">
-          <div className="auth-logo">🏥</div>
-          <h1>Healthcare-Readmission-Prediction-AI Model</h1>
-          <p>{mode==="login"?"Sign in to your clinical workspace":"Create your account"}</p>
-
-          <div className="field">
-            <label>Username</label>
-            <input value={form.username} onChange={set("username")} placeholder="Enter username"
-              onKeyDown={e=>e.key==="Enter"&&submit()} />
-          </div>
-          <div className="field">
-            <label>Password</label>
-            <input type="password" value={form.password} onChange={set("password")} placeholder="Enter password"
-              onKeyDown={e=>e.key==="Enter"&&submit()} />
-          </div>
-          {mode==="register"&&(
-            <div className="field">
-              <label>Role</label>
-              <select value={form.role} onChange={set("role")}>
-                <option value="user">Clinician</option>
-                <option value="admin">Administrator</option>
-              </select>
+        {/* ── LEFT: fullscreen 3D canvas + brand text ── */}
+        <div className="auth-left">
+          <canvas ref={canvasRef} id="medCanvas" style={{position:"absolute",inset:0,width:"100%",height:"100%"}}/>
+          <div className="auth-left-content">
+            <div style={{fontSize:"3.5rem",marginBottom:18,filter:"drop-shadow(0 0 24px rgba(34,211,238,0.6))",animation:"fadeUp 1s ease"}}>🏥</div>
+            <h2>HR-Prediction<br/><em>AI Model</em></h2>
+            <p>Advanced clinical decision support powered by machine learning for diabetic readmission prediction</p>
+            <div style={{display:"flex",gap:14,justifyContent:"center",marginTop:28}}>
+              {[["62.4%","Accuracy","#22d3ee"],["101K","Records","#34d399"],["12","Features","#a78bfa"]].map(([n,l,c])=>(
+                <div key={l} style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:12,padding:"12px 16px",textAlign:"center",backdropFilter:"blur(8px)"}}>
+                  <div style={{fontSize:"1.35rem",fontWeight:800,color:c,fontFamily:"'JetBrains Mono',monospace"}}>{n}</div>
+                  <div style={{fontSize:"0.65rem",color:"rgba(255,255,255,0.45)",textTransform:"uppercase",letterSpacing:"0.6px",marginTop:2}}>{l}</div>
+                </div>
+              ))}
             </div>
-          )}
+          </div>
+        </div>
 
-          <button className="btn btn-primary" onClick={submit} disabled={loading}>
-            {loading?"Please wait…":mode==="login"?"Sign In":"Create Account"}
-          </button>
+        {/* ── RIGHT: dark glassmorphism login card ── */}
+        <div className="auth-right">
+          <div className="auth-card">
+            <div className="auth-logo">🏥</div>
+            <h1>Healthcare-Readmission-<br/>Prediction-AI</h1>
+            <p>{mode==="login"?"Sign in to your clinical workspace":"Create your clinician account"}</p>
 
-          <div className="divider">or continue with</div>
+            <div className="field">
+              <label>Username</label>
+              <input value={form.username} onChange={set("username")} placeholder="Enter username"
+                onKeyDown={e=>e.key==="Enter"&&submit()} autoFocus/>
+            </div>
+            <div className="field">
+              <label>Password</label>
+              <input type="password" value={form.password} onChange={set("password")} placeholder="Enter password"
+                onKeyDown={e=>e.key==="Enter"&&submit()}/>
+            </div>
+            {mode==="register"&&(
+              <div style={{display:"flex",gap:8,alignItems:"flex-start",padding:"9px 12px",background:"rgba(14,165,233,0.1)",border:"1px solid rgba(34,211,238,0.2)",borderRadius:8,marginBottom:12,fontSize:"0.79rem",color:"rgba(186,230,255,0.85)"}}>
+                <span>ℹ️</span><span>Public registration creates a <strong>Clinician</strong> account. Admins are added via User Management.</span>
+              </div>
+            )}
 
-          <button className="btn btn-google" onClick={handleGoogleLogin}>
-            <svg width="18" height="18" viewBox="0 0 48 48">
-              <path fill="#4285F4" d="M46.9 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.9c-.6 3-2.4 5.5-5 7.2v6h8c4.7-4.3 7-10.7 7-17.2z"/>
-              <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-8-6c-2.1 1.4-4.8 2.2-7.9 2.2-6 0-11.1-4.1-13-9.6H3v6.2C7 42.7 15 48 24 48z"/>
-              <path fill="#FBBC05" d="M11 28.8c-.5-1.4-.7-2.9-.7-4.4s.3-3 .7-4.4V13.8H3C1.1 17.6 0 21.7 0 24s1.1 6.4 3 10.2l8-5.4z"/>
-              <path fill="#EA4335" d="M24 9.5c3.4 0 6.4 1.2 8.8 3.4l6.6-6.6C35.9 2.6 30.5 0 24 0 15 0 7 5.3 3 13.8l8 6.2c1.9-5.5 7-10.5 13-10.5z"/>
-            </svg>
-            Continue with Google
-          </button>
+            <button className="btn btn-primary" onClick={submit} disabled={loading} style={{marginBottom:8}}>
+              {loading?"Please wait…":mode==="login"?"Sign In →":"Create Account →"}
+            </button>
 
-          <div className="auth-toggle">
-            {mode==="login"
-              ?<>No account? <span onClick={()=>setMode("register")}>Register</span></>
-              :<>Have an account? <span onClick={()=>setMode("login")}>Sign In</span></>}
+            <div className="divider">or continue with</div>
+
+            <button className="btn btn-google" onClick={handleGoogleLogin}>
+              <svg width="17" height="17" viewBox="0 0 48 48">
+                <path fill="#4285F4" d="M46.9 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.9c-.6 3-2.4 5.5-5 7.2v6h8c4.7-4.3 7-10.7 7-17.2z"/>
+                <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-8-6c-2.1 1.4-4.8 2.2-7.9 2.2-6 0-11.1-4.1-13-9.6H3v6.2C7 42.7 15 48 24 48z"/>
+                <path fill="#FBBC05" d="M11 28.8c-.5-1.4-.7-2.9-.7-4.4s.3-3 .7-4.4V13.8H3C1.1 17.6 0 21.7 0 24s1.1 6.4 3 10.2l8-5.4z"/>
+                <path fill="#EA4335" d="M24 9.5c3.4 0 6.4 1.2 8.8 3.4l6.6-6.6C35.9 2.6 30.5 0 24 0 15 0 7 5.3 3 13.8l8 6.2c1.9-5.5 7-10.5 13-10.5z"/>
+              </svg>
+              Continue with Google
+            </button>
+
+            <div className="auth-toggle">
+              {mode==="login"
+                ?<>No account? <span onClick={()=>setMode("register")}>Register</span></>
+                :<>Have an account? <span onClick={()=>setMode("login")}>Sign In</span></>}
+            </div>
+
+            <div style={{marginTop:14,paddingTop:12,borderTop:"1px solid rgba(255,255,255,0.06)",textAlign:"center",fontSize:"0.68rem",color:"rgba(148,185,220,0.4)"}}>
+              © {new Date().getFullYear()} HR-Prediction-AI · Clinical decision support only
+            </div>
           </div>
         </div>
       </div>
@@ -871,6 +1203,7 @@
       {key:"predict",  icon:"🔮",label:"New Prediction"},
       {key:"history",  icon:"📜",label:"My Patients"},
       {key:"metrics",  icon:"📈",label:"Model Performance"},
+      {key:"account",  icon:"🔑",label:"My Account"},
     ];
     const adminItems = [
       {key:"allpatients", icon:"🏥",label:"All Patients"},
@@ -1219,10 +1552,15 @@
                 <div className={`result-label ${isHigh?"high":"low"}`}>{result.prediction}</div>
                 <div style={{fontSize:"0.82rem",color:"var(--text-muted)",marginBottom:4}}>{vals.patient_name}</div>
                 {result.probability&&(
-                  <div className="prob-row">
-                    <div className="prob-item">
-                      <div className="prob-num" style={{color:isHigh?"var(--danger)":"var(--success)"}}>{result.probability}%</div>
-                      <div className="prob-key">Confidence</div>
+                  <div style={{marginBottom:10}}>
+                    <ProbabilityChart prob={result.probability} isHigh={isHigh}/>
+                    <div style={{display:"flex",justifyContent:"center",gap:20,marginTop:7}}>
+                      <div className="prob-item"><div className="prob-num" style={{color:isHigh?"var(--danger)":"var(--success)"}}>{result.probability}%</div><div className="prob-key">Readmission Risk</div></div>
+                      <div className="prob-item"><div className="prob-num" style={{color:"var(--text-dim)"}}>{(100-result.probability).toFixed(1)}%</div><div className="prob-key">No Readmission</div></div>
+                    </div>
+                    <div style={{display:"flex",justifyContent:"space-between",fontSize:"0.69rem",color:"var(--text-muted)",margin:"9px 0 3px"}}><span>Low</span><span>50%</span><span>High</span></div>
+                    <div style={{height:6,borderRadius:99,background:"linear-gradient(90deg,var(--success),#fbbf24,var(--danger))",position:"relative"}}>
+                      <div style={{position:"absolute",top:"50%",transform:"translate(-50%,-50%)",left:`${Math.min(95,Math.max(5,result.probability))}%`,width:12,height:12,borderRadius:"50%",background:"white",border:"2.5px solid "+(isHigh?"var(--danger)":"var(--success)"),boxShadow:"0 1px 4px rgba(0,0,0,0.2)",transition:"left 0.5s ease"}}/>
                     </div>
                   </div>
                 )}
@@ -1552,7 +1890,7 @@
     const addUser = async()=>{
       if(!form.username||!form.password){showToast("Fill username and password","error");return;}
       setAdding(true);
-      const d = await api("/register",{method:"POST",body:JSON.stringify(form)}).catch(()=>null);
+      const d = await api("/admin/create-user",{method:"POST",body:JSON.stringify(form)}).catch(()=>null);
       if(d?.message==="User registered successfully"){
         showToast("User created!","success");setForm({username:"",password:"",role:"user",email:""});load();
       } else { showToast(d?.message||"Failed","error"); }
@@ -1825,12 +2163,130 @@
     );
   }
 
+  //PROBCHART
+  function ProbabilityChart({prob,isHigh}) {
+    const ref=useRef(null); const inst=useRef(null);
+    useEffect(()=>{
+      if(!ref.current)return;
+      if(inst.current){inst.current.destroy();inst.current=null;}
+      const safe=Math.min(99.9,Math.max(0.1,prob||50));
+      inst.current=new Chart(ref.current,{type:"doughnut",
+        data:{labels:["Risk","Safe"],datasets:[{data:[safe,100-safe],
+          backgroundColor:[isHigh?"rgba(220,38,38,0.85)":"rgba(5,150,105,0.85)","rgba(0,80,120,0.06)"],borderWidth:0,hoverOffset:4}]},
+        options:{responsive:true,maintainAspectRatio:false,cutout:"78%",plugins:{legend:{display:false}},animation:{animateRotate:true,duration:900}}
+      });
+      return()=>{if(inst.current){inst.current.destroy();inst.current=null;}};
+    },[prob,isHigh]);
+    return(<div style={{position:"relative",height:110,width:110,margin:"0 auto"}}>
+      <canvas ref={ref}/>
+      <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",pointerEvents:"none"}}>
+        <div style={{fontSize:"1.2rem",fontWeight:700,color:isHigh?"var(--danger)":"var(--success)",fontFamily:"'JetBrains Mono',monospace",lineHeight:1}}>{(prob||0).toFixed(0)}%</div>
+        <div style={{fontSize:"0.58rem",color:"var(--text-muted)",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px"}}>Risk</div>
+      </div>
+    </div>);
+  }
+
+  //ACCOUNT
+  function AccountPage({user,showToast,onLogout}) {
+    const [form,setForm]=useState({old_password:"",new_password:"",confirm:""});
+    const [saving,setSaving]=useState(false);
+    const set=k=>e=>setForm(f=>({...f,[k]:e.target.value}));
+    const submit=async()=>{
+      if(!form.old_password||!form.new_password){showToast("Fill in all fields","error");return;}
+      if(form.new_password!==form.confirm){showToast("Passwords do not match","error");return;}
+      if(form.new_password.length<4){showToast("Min 4 characters","error");return;}
+      setSaving(true);
+      const d=await api("/change-password",{method:"POST",body:JSON.stringify({old_password:form.old_password,new_password:form.new_password})}).catch(()=>null);
+      if(d?.message==="Password changed successfully"){showToast("Password changed! Logging out…","success");setTimeout(onLogout,1500);}
+      else showToast(d?.message||"Failed","error");
+      setSaving(false);
+    };
+    return(<div className="page">
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,alignItems:"start"}}>
+        <div className="card">
+          <div className="card-title">👤 My Profile</div>
+          <div className="card-sub">Your account information</div>
+          <div style={{display:"flex",alignItems:"center",gap:14,padding:"16px 0",borderBottom:"1px solid var(--border)",marginBottom:16}}>
+            <div style={{width:52,height:52,borderRadius:"50%",background:"linear-gradient(135deg,var(--accent),var(--accent2))",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.4rem",fontWeight:700,color:"white",flexShrink:0}}>{user.username[0].toUpperCase()}</div>
+            <div><div style={{fontSize:"1.05rem",fontWeight:700}}>{user.username}</div><div style={{marginTop:4}}><span className={`badge ${user.role==="admin"?"badge-admin":"badge-user"}`}>{user.role==="admin"?"Administrator":"Clinician"}</span></div></div>
+          </div>
+          {[["Username",user.username],["Role",user.role==="admin"?"Administrator":"Clinician"],["Session","Active ✓"]].map(([k,v])=>(
+            <div key={k} style={{display:"flex",justifyContent:"space-between",fontSize:"0.86rem",padding:"8px 0",borderBottom:"1px solid var(--border)"}}>
+              <span style={{color:"var(--text-muted)",fontWeight:500}}>{k}</span><span style={{fontWeight:600}}>{v}</span>
+            </div>
+          ))}
+        </div>
+        <div className="card">
+          <div className="card-title">🔑 Change Password</div>
+          <div className="card-sub">Update your account password</div>
+          {[["Current Password","old_password","Enter current password"],["New Password","new_password","Min 4 characters"],["Confirm New Password","confirm","Repeat new password"]].map(([lbl,k,ph])=>(
+            <div className="field" key={k}><label>{lbl}</label><input type="password" value={form[k]} onChange={set(k)} placeholder={ph} onKeyDown={e=>e.key==="Enter"&&submit()}/></div>
+          ))}
+          <div style={{background:"var(--warning-light)",border:"1px solid rgba(217,119,6,0.25)",borderRadius:8,padding:"9px 13px",fontSize:"0.8rem",color:"#92400e",marginBottom:14}}>⚠️ You will be logged out after changing password.</div>
+          <button className="btn btn-primary" onClick={submit} disabled={saving}>{saving?"Updating…":"Update Password"}</button>
+        </div>
+      </div>
+    </div>);
+  }
+
+  //HELPDESKMODAL
+  function HelpDeskModal({user,onClose}) {
+    const [open,setOpen]=useState(null);
+    const steps=[{n:"1",t:"Login",d:"Sign in or register."},{n:"2",t:"New Prediction",d:"Enter patient name + adjust 12 sliders."},{n:"3",t:"Run",d:"Click Run Prediction — AI returns risk instantly."},{n:"4",t:"Review",d:"See risk level, chart and recommendations."},{n:"5",t:"History",d:"All saved with unique Patient ID."}];
+    const faqs=[
+      {q:"What does this model predict?",a:"30-day hospital readmission risk for diabetic patients. Outputs High/Low Risk with confidence %."},
+      {q:"What are the 12 features?",a:"Age, Days in Hospital, Lab Procedures, Procedures, Medications, Outpatient/ER/Inpatient Visits, Diagnoses, Insulin, Med Changed, On Diabetes Med."},
+      {q:"How accurate is it?",a:"62.4% accuracy, AUC-ROC 0.67, trained on ~100K UCI records."},
+      {q:"How do I change my password?",a:"My Account → Change Password form in the sidebar."},
+      ...(user.role==="admin"?[{q:"How do I add users/admins?",a:"User Management → Add New User → select role → Add User."}]:[]),
+    ];
+    return(<div style={{position:"fixed",inset:0,zIndex:2000,background:"rgba(0,0,0,0.45)",display:"flex",alignItems:"flex-end",justifyContent:"flex-end",padding:"0 24px 86px 0"}} onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div style={{width:440,maxHeight:"70vh",background:"white",borderRadius:16,boxShadow:"0 24px 60px rgba(0,0,0,0.25)",display:"flex",flexDirection:"column",animation:"fadeUp 0.25s ease"}}>
+        <div style={{padding:"14px 18px",borderBottom:"1px solid var(--border)",display:"flex",justifyContent:"space-between",alignItems:"center",background:"linear-gradient(135deg,var(--accent-light),#f0fdfa)",borderRadius:"16px 16px 0 0"}}>
+          <div><div style={{fontSize:"0.93rem",fontWeight:700}}>❓ Help & Guide</div><div style={{fontSize:"0.72rem",color:"var(--text-muted)"}}>HR-Prediction-AI</div></div>
+          <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:"16px",color:"var(--text-muted)",padding:"4px 8px",borderRadius:5}}>✕</button>
+        </div>
+        <div style={{overflow:"auto",flex:1,padding:"14px 18px"}}>
+          <div style={{fontSize:"0.7rem",fontWeight:700,color:"var(--text-muted)",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8}}>How It Works</div>
+          <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:14}}>
+            {steps.map((s,i)=>(
+              <div key={i} style={{display:"flex",gap:9,alignItems:"flex-start"}}>
+                <div style={{width:20,height:20,borderRadius:"50%",background:"linear-gradient(135deg,var(--accent),var(--accent2))",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"0.68rem",fontWeight:700,color:"white",flexShrink:0,marginTop:1}}>{s.n}</div>
+                <div><div style={{fontSize:"0.82rem",fontWeight:600}}>{s.t}</div><div style={{fontSize:"0.75rem",color:"var(--text-muted)",lineHeight:1.4}}>{s.d}</div></div>
+              </div>
+            ))}
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:14}}>
+            {[["🤖","XGBoost","ML Model","var(--accent)"],["📊","101K","UCI Data","var(--accent2)"],["🎯","62.4%","Accuracy","var(--purple)"]].map(([ic,v,s,c])=>(
+              <div key={v} style={{background:"var(--surface2)",border:"1px solid var(--border)",borderRadius:8,padding:"8px 6px",textAlign:"center",borderTop:`2px solid ${c}`}}>
+                <div style={{fontSize:"1rem",marginBottom:2}}>{ic}</div>
+                <div style={{fontSize:"0.76rem",fontWeight:700,color:c}}>{v}</div>
+                <div style={{fontSize:"0.64rem",color:"var(--text-muted)"}}>{s}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{fontSize:"0.7rem",fontWeight:700,color:"var(--text-muted)",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:7}}>FAQ</div>
+          {faqs.map((item,i)=>(
+            <div key={i} style={{border:"1px solid var(--border)",borderRadius:7,overflow:"hidden",marginBottom:4}}>
+              <div onClick={()=>setOpen(open===i?null:i)} style={{padding:"9px 12px",display:"flex",justifyContent:"space-between",cursor:"pointer",background:open===i?"var(--accent-light)":"var(--surface2)"}}>
+                <span style={{fontSize:"0.81rem",fontWeight:600,color:open===i?"var(--accent-dark)":"var(--text)"}}>{item.q}</span>
+                <span style={{fontSize:"0.8rem",color:"var(--text-muted)",transform:open===i?"rotate(180deg)":"none",transition:"transform 0.2s",marginLeft:6}}>▾</span>
+              </div>
+              {open===i&&<div style={{padding:"9px 12px",fontSize:"0.8rem",color:"var(--text-dim)",lineHeight:1.6,borderTop:"1px solid var(--border)",background:"white"}}>{item.a}</div>}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>);
+  }
+
   //APP
   function App() {
     const [user,setUser] = useState(null);
     const [tab,setTab] = useState("dashboard");
     const [toast,setToast] = useState(null);
 
+    const [helpOpen,setHelpOpen]=useState(false);
     const showToast=(msg,type="info")=>setToast({msg,type,id:Date.now()});
     const handleLogin=(u)=>{setUser(u);setTab("dashboard");};
     const handleLogout=async()=>{
@@ -1841,6 +2297,7 @@
     const titles={
       dashboard:"Dashboard",predict:"New Prediction",
       history:"My Patients",metrics:"Model Performance",
+      account:"My Account",
       allpatients:"All Patients",users:"User Management",
       systemstats:"System Analytics",activitylog:"Activity Log"
     };
@@ -1871,11 +2328,21 @@
           {tab==="predict"     && <Predict showToast={showToast}/>}
           {tab==="history"     && <History showToast={showToast}/>}
           {tab==="metrics"     && <ModelMetrics showToast={showToast}/>}
+          {tab==="account"     && <AccountPage user={user} showToast={showToast} onLogout={handleLogout}/>}
           {tab==="allpatients" && user.role==="admin" && <AllPatients showToast={showToast}/>}
           {tab==="users"       && user.role==="admin" && <Users showToast={showToast}/>}
           {tab==="systemstats" && user.role==="admin" && <SystemStats showToast={showToast}/>}
           {tab==="activitylog" && user.role==="admin" && <ActivityLog showToast={showToast}/>}
         </div>
+        {helpOpen&&<HelpDeskModal user={user} onClose={()=>setHelpOpen(false)}/>}
+        <button onClick={()=>setHelpOpen(h=>!h)} title="Help"
+          style={{position:"fixed",bottom:24,right:24,zIndex:1000,width:50,height:50,borderRadius:"50%",border:"none",cursor:"pointer",
+            background:"linear-gradient(135deg,var(--accent),var(--accent2))",color:"white",fontSize:"1.3rem",
+            boxShadow:"0 4px 16px rgba(2,132,199,0.4)",display:"flex",alignItems:"center",justifyContent:"center",transition:"transform 0.18s,box-shadow 0.18s"}}
+          onMouseEnter={e=>{e.currentTarget.style.transform="scale(1.12)";e.currentTarget.style.boxShadow="0 6px 22px rgba(2,132,199,0.55)";}}
+          onMouseLeave={e=>{e.currentTarget.style.transform="scale(1)";e.currentTarget.style.boxShadow="0 4px 16px rgba(2,132,199,0.4)";}}>
+          {helpOpen?"✕":"?"}
+        </button>
         {toast&&<Toast key={toast.id} msg={toast.msg} type={toast.type} onClose={()=>setToast(null)}/>}
       </div>
     );

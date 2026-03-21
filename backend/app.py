@@ -178,12 +178,50 @@ def register():
     conn = sqlite3.connect("database.db"); c = conn.cursor()
     try:
         c.execute("INSERT INTO users (username,password,role,email) VALUES (?,?,?,?)",
-                  (d["username"],generate_password_hash(d["password"]),d.get("role","user"),d.get("email","")))
+                  (d["username"].strip(),generate_password_hash(d["password"]),"user",d.get("email","").strip()))
         conn.commit()
         return jsonify({"message":"User registered successfully"})
     except sqlite3.IntegrityError:
         return jsonify({"message":"Username already exists"}), 400
     finally: conn.close()
+
+@app.route("/admin/create-user", methods=["POST"])
+@require_admin
+def admin_create_user():
+    d = request.get_json() or {}
+    if not d.get("username") or not d.get("password"):
+        return jsonify({"message":"Username and password required"}), 400
+    if len(d.get("password","")) < 4:
+        return jsonify({"message":"Password must be at least 4 characters"}), 400
+    role = d.get("role","user")
+    if role not in ("user","admin"): role="user"
+    conn = sqlite3.connect("database.db"); c = conn.cursor()
+    try:
+        c.execute("INSERT INTO users (username,password,role,email) VALUES (?,?,?,?)",
+                  (d["username"].strip(),generate_password_hash(d["password"]),role,d.get("email","").strip()))
+        conn.commit()
+        log_activity(request.user_data["user_id"],request.user_data["username"],"CREATE_USER",f"Created {role}: {d['username']}")
+        return jsonify({"message":"User registered successfully"})
+    except sqlite3.IntegrityError:
+        return jsonify({"message":"Username already exists"}), 400
+    finally: conn.close()
+
+@app.route("/change-password", methods=["POST"])
+@require_auth
+def change_password():
+    d = request.get_json() or {}
+    old_pw=d.get("old_password",""); new_pw=d.get("new_password","")
+    if not old_pw or not new_pw: return jsonify({"message":"Both passwords required"}), 400
+    if len(new_pw)<4: return jsonify({"message":"Min 4 characters"}), 400
+    uid=request.user_data["user_id"]
+    conn=sqlite3.connect("database.db"); c=conn.cursor()
+    c.execute("SELECT password FROM users WHERE id=?",(uid,))
+    row=c.fetchone()
+    if not row or not check_password_hash(row[0],old_pw):
+        conn.close(); return jsonify({"message":"Current password is incorrect"}), 400
+    c.execute("UPDATE users SET password=? WHERE id=?",(generate_password_hash(new_pw),uid))
+    conn.commit(); conn.close()
+    return jsonify({"message":"Password changed successfully"})
 
 @app.route("/login", methods=["POST"])
 def login():
