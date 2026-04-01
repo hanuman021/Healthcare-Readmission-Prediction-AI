@@ -1,0 +1,130 @@
+{
+  "model_type": "XGBoost + LightGBM Ensemble",
+  "accuracy": 0.8002,
+  "precision": 0.805,
+  "recall": 0.8002,
+  "f1_score": 0.7983,
+  "auc_roc": 0.8627,
+  "confusion_matrix": {
+    "tn": 9239,
+    "fp": 1267,
+    "fn": 2702,
+    "tp": 6661
+  },
+  "roc_curve": [
+    {
+      "fpr": 0.0,
+      "tpr": 0.0
+    },
+    {
+      "fpr": 0.021,
+      "tpr": 0.326
+    },
+    {
+      "fpr": 0.044,
+      "tpr": 0.495
+    },
+    {
+      "fpr": 0.067,
+      "tpr": 0.616
+    },
+    {
+      "fpr": 0.099,
+      "tpr": 0.684
+    },
+    {
+      "fpr": 0.137,
+      "tpr": 0.727
+    },
+    {
+      "fpr": 0.18,
+      "tpr": 0.768
+    },
+    {
+      "fpr": 0.233,
+      "tpr": 0.805
+    },
+    {
+      "fpr": 0.296,
+      "tpr": 0.838
+    },
+    {
+      "fpr": 0.367,
+      "tpr": 0.868
+    },
+    {
+      "fpr": 0.449,
+      "tpr": 0.898
+    },
+    {
+      "fpr": 0.543,
+      "tpr": 0.925
+    },
+    {
+      "fpr": 0.65,
+      "tpr": 0.951
+    },
+    {
+      "fpr": 0.785,
+      "tpr": 0.976
+    },
+    {
+      "fpr": 0.991,
+      "tpr": 1.0
+    },
+    {
+      "fpr": 1.0,
+      "tpr": 1.0
+    }
+  ],
+  "feature_importance": [
+    {
+      "feature": "Patient Encounter Count",
+      "importance": 0.2936
+    },
+    {
+      "feature": "Encounter X Inpatient",
+      "importance": 0.1048
+    },
+    {
+      "feature": "Number Inpatient",
+      "importance": 0.0872
+    },
+    {
+      "feature": "Inpatient X Diagnoses",
+      "importance": 0.0638
+    },
+    {
+      "feature": "Age X Inpatient",
+      "importance": 0.0485
+    },
+    {
+      "feature": "Total Visits",
+      "importance": 0.0315
+    },
+    {
+      "feature": "Encounter X Emergency",
+      "importance": 0.0187
+    },
+    {
+      "feature": "Admission Type Id",
+      "importance": 0.017
+    },
+    {
+      "feature": "Number Diagnoses",
+      "importance": 0.0156
+    },
+    {
+      "feature": "Glucose Tested",
+      "importance": 0.0113
+    },
+    {
+      "feature": "High Readmit Discharge",
+      "importance": 0.0108
+    },
+    {
+      "feature": "Admission Source Id",
+      "importance": 0.0105
+    }
+  ]
+}

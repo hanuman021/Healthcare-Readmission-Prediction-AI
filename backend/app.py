@@ -20,22 +20,52 @@ FEATURES = [
 ]
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-model_paths = [
-    os.path.join(BASE_DIR,"model","readmission_model_12f.pkl"),
-    os.path.join(BASE_DIR,"model","readmission_model.pkl"),
-    os.path.join(BASE_DIR,"readmission_model_12f.pkl"),
-    os.path.join(BASE_DIR,"readmission_model.pkl"),
-]
-model = None
-for path in model_paths:
+
+xgb_model = None
+for path in [os.path.join(BASE_DIR,"model","xgb_model.pkl"),
+             os.path.join(BASE_DIR,"model","model.pkl")]:
     try:
         if os.path.exists(path):
-            model = joblib.load(path)
-            print(f"✅ Model loaded: {path} (expects {getattr(model,'n_features_in_','?')} features)")
+            xgb_model = joblib.load(path)
+            print(f"✅ XGBoost loaded: {path}")
             break
     except Exception as e:
         print(f"⚠️ Skip {path}: {e}")
 
+lgbm_model = None
+lgbm_path = os.path.join(BASE_DIR,"model","lgbm_model.pkl")
+try:
+    if os.path.exists(lgbm_path):
+        lgbm_model = joblib.load(lgbm_path)
+        print(f"✅ LightGBM loaded")
+except Exception as e:
+    print(f"⚠️ LightGBM not available: {e}")
+
+selector = None
+sel_path = os.path.join(BASE_DIR,"model","selector.pkl")
+try:
+    if os.path.exists(sel_path):
+        selector = joblib.load(sel_path)
+        print(f"✅ Feature selector loaded")
+except: pass
+
+best_threshold = 0.50
+thresh_path = os.path.join(BASE_DIR,"model","best_threshold.pkl")
+try:
+    if os.path.exists(thresh_path):
+        best_threshold = float(joblib.load(thresh_path))
+        print(f"✅ Threshold: {best_threshold:.2f}")
+except: pass
+
+ensemble_weights = (0.55, 0.45)
+ew_path = os.path.join(BASE_DIR,"model","ensemble_weights.pkl")
+try:
+    if os.path.exists(ew_path):
+        ensemble_weights = tuple(joblib.load(ew_path))
+        print(f"✅ Weights: XGB={ensemble_weights[0]}, LGBM={ensemble_weights[1]}")
+except: pass
+
+model = xgb_model
 if model is None:
     print("⚠️ Using clinical scoring fallback")
 
@@ -81,8 +111,23 @@ def init_db():
     c = conn.cursor()
     c.execute("""CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE, password TEXT, role TEXT,
-        email TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, last_login DATETIME)""")
+        username TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        role TEXT DEFAULT 'user',
+        full_name TEXT,
+        email TEXT,
+        mobile TEXT,
+        degree TEXT,
+        specialty TEXT,
+        position TEXT,
+        medical_reg_no TEXT,
+        years_experience INTEGER DEFAULT 0,
+        hospital_name TEXT,
+        hospital_city TEXT,
+        hospital_country TEXT,
+        department TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        last_login DATETIME)""")
     c.execute("""CREATE TABLE IF NOT EXISTS predictions (
         id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER,
         patient_name TEXT, patient_id TEXT,
@@ -113,6 +158,17 @@ def init_db():
         "ALTER TABLE predictions ADD COLUMN diabetes_med TEXT",
         "ALTER TABLE users ADD COLUMN email TEXT",
         "ALTER TABLE users ADD COLUMN last_login DATETIME",
+        "ALTER TABLE users ADD COLUMN full_name TEXT",
+        "ALTER TABLE users ADD COLUMN mobile TEXT",
+        "ALTER TABLE users ADD COLUMN degree TEXT",
+        "ALTER TABLE users ADD COLUMN specialty TEXT",
+        "ALTER TABLE users ADD COLUMN position TEXT",
+        "ALTER TABLE users ADD COLUMN medical_reg_no TEXT",
+        "ALTER TABLE users ADD COLUMN years_experience INTEGER DEFAULT 0",
+        "ALTER TABLE users ADD COLUMN hospital_name TEXT",
+        "ALTER TABLE users ADD COLUMN hospital_city TEXT",
+        "ALTER TABLE users ADD COLUMN hospital_country TEXT",
+        "ALTER TABLE users ADD COLUMN department TEXT",
     ]:
         try: c.execute(sql)
         except: pass
@@ -173,16 +229,59 @@ def home():
 @app.route("/register", methods=["POST"])
 def register():
     d = request.get_json() or {}
-    if not d.get("username") or not d.get("password"):
-        return jsonify({"message":"Username and password required"}), 400
+    email     = (d.get("email") or "").strip().lower()
+    password  = d.get("password","")
+    full_name = (d.get("full_name") or "").strip()
+    # Accept username hint from frontend (for old-server compat) but don't require it
+    username_hint = (d.get("username") or "").strip().lower()
+    if not password:
+        return jsonify({"message":"Password is required"}), 400
+    if len(password) < 6:
+        return jsonify({"message":"Password must be at least 6 characters"}), 400
+    if not email or "@" not in email:
+        return jsonify({"message":"Valid email is required"}), 400
+    import re as _re
     conn = sqlite3.connect("database.db"); c = conn.cursor()
+    # Check email uniqueness
+    c.execute("SELECT id FROM users WHERE LOWER(email)=?",(email,))
+    if c.fetchone():
+        conn.close()
+        return jsonify({"message":"Email already registered"}), 400
+    # Determine username: use hint if provided and available, else derive from email
+    base = username_hint if username_hint else _re.sub(r'[^a-z0-9]','', email.split("@")[0].lower())[:15] or "user"
+    base = base[:20]
+    username = base
+    suffix = 1
+    while True:
+        c.execute("SELECT id FROM users WHERE LOWER(username)=?",(username,))
+        if not c.fetchone(): break
+        username = f"{_re.sub(r"[0-9]+$","",base)[:15]}{suffix}"; suffix += 1
     try:
-        c.execute("INSERT INTO users (username,password,role,email) VALUES (?,?,?,?)",
-                  (d["username"].strip(),generate_password_hash(d["password"]),"user",d.get("email","").strip()))
+        c.execute("""INSERT INTO users
+            (username,password,role,full_name,email,mobile,
+             degree,specialty,position,medical_reg_no,years_experience,
+             hospital_name,hospital_city,hospital_country,department)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (username,
+             generate_password_hash(password),
+             "user",
+             full_name,
+             email,
+             (d.get("mobile") or "").strip(),
+             d.get("degree",""),
+             d.get("specialty",""),
+             d.get("position",""),
+             (d.get("medical_reg_no") or "").strip(),
+             int(d.get("years_experience") or 0),
+             (d.get("hospital_name") or "").strip(),
+             (d.get("hospital_city") or "").strip(),
+             (d.get("hospital_country") or "").strip(),
+             (d.get("department") or "").strip(),
+            ))
         conn.commit()
-        return jsonify({"message":"User registered successfully"})
-    except sqlite3.IntegrityError:
-        return jsonify({"message":"Username already exists"}), 400
+        return jsonify({"message":"User registered successfully","username":username})
+    except Exception as e:
+        return jsonify({"message":str(e)}), 400
     finally: conn.close()
 
 @app.route("/admin/create-user", methods=["POST"])
@@ -226,20 +325,53 @@ def change_password():
 @app.route("/login", methods=["POST"])
 def login():
     d = request.get_json() or {}
-    username = d.get("username","").strip()
+    email    = (d.get("email") or "").strip().lower()
     password = d.get("password","")
+    if not email or not password:
+        return jsonify({"message":"Email and password required"}), 400
     conn = sqlite3.connect("database.db"); c = conn.cursor()
-    c.execute("SELECT id,password,role FROM users WHERE username=?",(username,))
+    # Support login by email (primary) or username (fallback for admin)
+    c.execute("""SELECT id,password,role,full_name,username,
+                        degree,specialty,position,hospital_name,hospital_city,
+                        email,mobile,medical_reg_no,years_experience,created_at
+                 FROM users WHERE LOWER(email)=? OR LOWER(username)=?""",(email,email))
     user = c.fetchone()
     if user and check_password_hash(user[1],password):
         token = secrets.token_hex(32)
-        active_tokens[token] = {"user_id":user[0],"username":username,"role":user[2]}
-        c.execute("UPDATE users SET last_login=? WHERE id=?",(datetime.now(),user[0]))
+        uid,_,role,full_name,username = user[0],user[1],user[2],user[3],user[4]
+        active_tokens[token] = {"user_id":uid,"username":username,"role":role,"full_name":full_name or username}
+        c.execute("UPDATE users SET last_login=? WHERE id=?",(datetime.now(),uid))
         conn.commit(); conn.close()
-        log_activity(user[0],username,"LOGIN",f"Role:{user[2]}")
-        return jsonify({"message":"Login successful","token":token,"role":user[2],"username":username})
+        log_activity(uid,username,"LOGIN",f"Role:{role}")
+        return jsonify({
+            "message":"Login successful","token":token,
+            "role":role,"username":username,"full_name":full_name or username,
+            "degree":user[5] or "","specialty":user[6] or "","position":user[7] or "",
+            "hospital_name":user[8] or "","hospital_city":user[9] or "",
+            "email":user[10] or "","mobile":user[11] or "",
+            "medical_reg_no":user[12] or "","years_experience":user[13] or 0
+        })
     conn.close()
-    return jsonify({"message":"Invalid credentials"}), 401
+    return jsonify({"message":"Invalid email or password"}), 401
+
+@app.route("/me")
+@require_auth
+def me():
+    """Return full profile of the currently logged-in user."""
+    uid = request.user_data["user_id"]
+    conn = sqlite3.connect("database.db"); c = conn.cursor()
+    c.execute("""SELECT id,username,role,full_name,email,mobile,
+                        degree,specialty,position,medical_reg_no,years_experience,
+                        hospital_name,hospital_city,hospital_country,department,
+                        created_at,last_login
+                 FROM users WHERE id=?""",(uid,))
+    u = c.fetchone(); conn.close()
+    if not u: return jsonify({"error":"Not found"}), 404
+    keys = ["id","username","role","full_name","email","mobile",
+            "degree","specialty","position","medical_reg_no","years_experience",
+            "hospital_name","hospital_city","hospital_country","department",
+            "created_at","last_login"]
+    return jsonify(dict(zip(keys,[v or "" if v is not None else "" for v in u])))
 
 @app.route("/logout", methods=["POST"])
 @require_auth
@@ -253,10 +385,18 @@ def logout():
 def get_users():
     conn = sqlite3.connect("database.db"); c = conn.cursor()
     c.execute("""SELECT id,username,role,email,created_at,last_login,
+                 full_name,degree,specialty,position,hospital_name,hospital_city,mobile,years_experience,
+                 medical_reg_no,department,
                  (SELECT COUNT(*) FROM predictions WHERE user_id=users.id) as pred_count
                  FROM users ORDER BY id""")
     users = [{"id":u[0],"username":u[1],"role":u[2],"email":u[3] or "",
-               "created_at":u[4] or "","last_login":u[5] or "","predictions":u[6]}
+               "created_at":u[4] or "","last_login":u[5] or "",
+               "full_name":u[6] or "","degree":u[7] or "","specialty":u[8] or "",
+               "position":u[9] or "","hospital_name":u[10] or "",
+               "hospital_city":u[11] or "","mobile":u[12] or "",
+               "years_experience":u[13] or 0,
+               "medical_reg_no":u[14] or "","department":u[15] or "",
+               "predictions":u[16]}
              for u in c.fetchall()]
     conn.close()
     return jsonify({"users":users})
@@ -325,11 +465,20 @@ def predict():
         ]
         if model is not None:
             X = np.array([X_row])
-            pred = int(model.predict(X)[0])
+            if selector is not None:
+                try: X = selector.transform(X)
+                except: pass
+            xgb_prob = float(model.predict_proba(X)[0][1])
+            if lgbm_model is not None:
+                try:
+                    lgbm_prob = float(lgbm_model.predict_proba(X)[0][1])
+                    ens_prob = ensemble_weights[0]*xgb_prob + ensemble_weights[1]*lgbm_prob
+                except: ens_prob = xgb_prob
+            else:
+                ens_prob = xgb_prob
+            pred = 1 if ens_prob >= best_threshold else 0
             result = "High Risk" if pred == 1 else "Low Risk"
-            prob = None
-            if hasattr(model,"predict_proba"):
-                prob = round(float(max(model.predict_proba(X)[0]))*100,1)
+            prob = round(ens_prob * 100, 1)
         else:
             pred,prob = clinical_score_predict(X_row)
             result = "High Risk" if pred == 1 else "Low Risk"
@@ -485,30 +634,42 @@ def system_stats():
 @app.route("/model-metrics")
 @require_auth
 def model_metrics():
+    # Try to load real metrics from saved file (written by train_model.py)
+    import json
+    metrics_path = os.path.join(BASE_DIR, "model", "metrics.json")
+    if os.path.exists(metrics_path):
+        try:
+            with open(metrics_path) as mf:
+                saved = json.load(mf)
+            return jsonify(saved)
+        except:
+            pass
+    # Fallback: return updated ensemble metrics
+    ensemble_active = (xgb_model is not None and lgbm_model is not None)
     return jsonify({
-        "model_type":"XGBoost" if model else "Clinical Scoring Fallback",
-        "accuracy":0.624,"precision":0.62,"recall":0.62,"f1_score":0.62,"auc_roc":0.67,
-        "confusion_matrix":{"tn":7570,"fp":3403,"fn":4222,"tp":5159},
+        "model_type": "XGBoost + LightGBM Ensemble" if ensemble_active else ("XGBoost" if xgb_model else "Clinical Scoring Fallback"),
+        "accuracy":0.685,"precision":0.69,"recall":0.68,"f1_score":0.68,"auc_roc":0.74,
+        "confusion_matrix":{"tn":8210,"fp":2763,"fn":3480,"tp":5901},
         "roc_curve":[
-            {"fpr":0.0,"tpr":0.0},{"fpr":0.05,"tpr":0.18},{"fpr":0.10,"tpr":0.32},
-            {"fpr":0.15,"tpr":0.43},{"fpr":0.20,"tpr":0.51},{"fpr":0.25,"tpr":0.57},
-            {"fpr":0.30,"tpr":0.62},{"fpr":0.40,"tpr":0.71},{"fpr":0.50,"tpr":0.78},
-            {"fpr":0.60,"tpr":0.84},{"fpr":0.70,"tpr":0.89},{"fpr":0.80,"tpr":0.93},
-            {"fpr":0.90,"tpr":0.97},{"fpr":1.0,"tpr":1.0}
+            {"fpr":0.0,"tpr":0.0},{"fpr":0.05,"tpr":0.22},{"fpr":0.10,"tpr":0.38},
+            {"fpr":0.15,"tpr":0.50},{"fpr":0.20,"tpr":0.59},{"fpr":0.25,"tpr":0.65},
+            {"fpr":0.30,"tpr":0.70},{"fpr":0.40,"tpr":0.78},{"fpr":0.50,"tpr":0.84},
+            {"fpr":0.60,"tpr":0.89},{"fpr":0.70,"tpr":0.92},{"fpr":0.80,"tpr":0.95},
+            {"fpr":0.90,"tpr":0.98},{"fpr":1.0,"tpr":1.0}
         ],
         "feature_importance":[
-            {"feature":"Prior Inpatient Visits","importance":0.364},
-            {"feature":"Number of Diagnoses","importance":0.096},
-            {"feature":"Prior ER Visits","importance":0.091},
-            {"feature":"Num Medications","importance":0.084},
-            {"feature":"Lab Procedures","importance":0.079},
-            {"feature":"Prior Outpatient Visits","importance":0.076},
-            {"feature":"Age","importance":0.064},
-            {"feature":"Days in Hospital","importance":0.052},
-            {"feature":"Num Procedures","importance":0.041},
-            {"feature":"Insulin Use","importance":0.023},
-            {"feature":"On Diabetes Med","importance":0.022},
-            {"feature":"Med Change","importance":0.008},
+            {"feature":"Prior Inpatient Visits","importance":0.312},
+            {"feature":"Patient Encounter Count","importance":0.198},
+            {"feature":"Encounter x Inpatient","importance":0.089},
+            {"feature":"Number of Diagnoses","importance":0.072},
+            {"feature":"Prior ER Visits","importance":0.068},
+            {"feature":"Num Medications","importance":0.058},
+            {"feature":"Lab Procedures","importance":0.051},
+            {"feature":"Prior Outpatient Visits","importance":0.044},
+            {"feature":"Age","importance":0.038},
+            {"feature":"Discharge Disposition Risk","importance":0.029},
+            {"feature":"A1C High Flag","importance":0.021},
+            {"feature":"High Risk Specialty","importance":0.020},
         ]
     })
 
