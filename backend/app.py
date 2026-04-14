@@ -65,6 +65,16 @@ try:
         print(f"✅ Weights: XGB={ensemble_weights[0]}, LGBM={ensemble_weights[1]}")
 except: pass
 
+# Load selected feature names (needed to build correct input vector)
+selected_features_list = []
+sf_path = os.path.join(BASE_DIR,"model","selected_features.pkl")
+try:
+    if os.path.exists(sf_path):
+        selected_features_list = joblib.load(sf_path)
+        print(f"✅ Selected features loaded: {len(selected_features_list)} features")
+except Exception as e:
+    print(f"⚠️ Could not load selected features: {e}")
+
 model = xgb_model
 if model is None:
     print("⚠️ Using clinical scoring fallback")
@@ -288,22 +298,75 @@ def register():
 @require_admin
 def admin_create_user():
     d = request.get_json() or {}
-    if not d.get("username") or not d.get("password"):
-        return jsonify({"message":"Username and password required"}), 400
-    if len(d.get("password","")) < 4:
+    email    = (d.get("email") or "").strip().lower()
+    password = d.get("password","")
+    full_name= (d.get("full_name") or "").strip()
+    if not email or "@" not in email:
+        return jsonify({"message":"Valid email is required"}), 400
+    if not password or len(password) < 4:
         return jsonify({"message":"Password must be at least 4 characters"}), 400
     role = d.get("role","user")
-    if role not in ("user","admin"): role="user"
+    if role not in ("user","admin"): role = "user"
+    import re as _re
+    base = _re.sub(r"[^a-z0-9]","", email.split("@")[0].lower())[:15] or "user"
     conn = sqlite3.connect("database.db"); c = conn.cursor()
+    # Check email unique
+    c.execute("SELECT id FROM users WHERE LOWER(email)=?",(email,))
+    if c.fetchone():
+        conn.close()
+        return jsonify({"message":"Email already registered"}), 400
+    # Find free username
+    username = base; suffix = 1
+    while True:
+        c.execute("SELECT id FROM users WHERE username=?",(username,))
+        if not c.fetchone(): break
+        username = f"{base}{suffix}"; suffix += 1
     try:
-        c.execute("INSERT INTO users (username,password,role,email) VALUES (?,?,?,?)",
-                  (d["username"].strip(),generate_password_hash(d["password"]),role,d.get("email","").strip()))
+        c.execute("""INSERT INTO users
+            (username,password,role,full_name,email,mobile,
+             degree,specialty,position,medical_reg_no,years_experience,
+             hospital_name,hospital_city,hospital_country,department)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (username, generate_password_hash(password), role, full_name, email,
+             (d.get("mobile") or "").strip(),
+             d.get("degree",""), d.get("specialty",""), d.get("position",""),
+             (d.get("medical_reg_no") or "").strip(),
+             int(d.get("years_experience") or 0),
+             (d.get("hospital_name") or "").strip(),
+             (d.get("hospital_city") or "").strip(),
+             (d.get("hospital_country") or "India").strip(),
+             (d.get("department") or "").strip()))
         conn.commit()
-        log_activity(request.user_data["user_id"],request.user_data["username"],"CREATE_USER",f"Created {role}: {d['username']}")
-        return jsonify({"message":"User registered successfully"})
-    except sqlite3.IntegrityError:
-        return jsonify({"message":"Username already exists"}), 400
+        log_activity(request.user_data["user_id"],request.user_data["username"],
+                     "CREATE_USER",f"Created {role}: {email} → @{username}")
+        return jsonify({"message":"User registered successfully",
+                        "username":username,
+                        "note": "Profile incomplete — user must complete details on first login."})
+    except sqlite3.IntegrityError as e:
+        return jsonify({"message":str(e)}), 400
     finally: conn.close()
+
+@app.route("/update-profile", methods=["POST"])
+@require_auth
+def update_profile():
+    """Let a user fill/update their own profile details."""
+    d   = request.get_json() or {}
+    uid = request.user_data["user_id"]
+    allowed = ["full_name","mobile","degree","specialty","position",
+               "medical_reg_no","years_experience","hospital_name",
+               "hospital_city","hospital_country","department"]
+    updates, params = [], []
+    for k in allowed:
+        if k in d:
+            updates.append(f"{k}=?")
+            params.append(d[k])
+    if not updates:
+        return jsonify({"message":"Nothing to update"}), 400
+    params.append(uid)
+    conn = sqlite3.connect("database.db"); c = conn.cursor()
+    c.execute(f"UPDATE users SET {', '.join(updates)} WHERE id=?", params)
+    conn.commit(); conn.close()
+    return jsonify({"message":"Profile updated successfully"})
 
 @app.route("/change-password", methods=["POST"])
 @require_auth
@@ -449,38 +512,198 @@ def predict():
         change_str   = d.get("change","No")
         diabetes_str = d.get("diabetesMed","Yes")
         notes        = d.get("notes","").strip()
-        X_row = [
-            age_val,
-            float(d.get("time_in_hospital",3)),
-            float(d.get("num_lab_procedures",40)),
-            float(d.get("num_procedures",1)),
-            float(d.get("num_medications",15)),
-            float(d.get("number_outpatient",0)),
-            float(d.get("number_emergency",0)),
-            float(d.get("number_inpatient",0)),
-            float(d.get("number_diagnoses",7)),
-            float(insulin_map.get(insulin_str,1)),
-            float(change_map.get(change_str,1)),
-            float(diabetes_map.get(diabetes_str,1)),
-        ]
+        # Raw inputs from form (12 base features)
+        age_v        = age_val
+        time_hosp    = float(d.get("time_in_hospital",3))
+        num_lab      = float(d.get("num_lab_procedures",40))
+        num_proc     = float(d.get("num_procedures",1))
+        num_med      = float(d.get("num_medications",15))
+        n_out        = float(d.get("number_outpatient",0))
+        n_er         = float(d.get("number_emergency",0))
+        n_inp        = float(d.get("number_inpatient",0))
+        n_diag       = float(d.get("number_diagnoses",7))
+        insulin_enc  = float(insulin_map.get(insulin_str,1))
+        change_enc   = float(change_map.get(change_str,1))
+        diabmed_enc  = float(diabetes_map.get(diabetes_str,1))
+        enc_count    = float(d.get("patient_encounter_count",1))
+
+        # For clinical fallback (12-feature scorer)
+        X_row = [age_v,time_hosp,num_lab,num_proc,num_med,n_out,n_er,n_inp,n_diag,insulin_enc,change_enc,diabmed_enc]
+
         if model is not None:
-            X = np.array([X_row])
-            if selector is not None:
-                try: X = selector.transform(X)
-                except: pass
-            xgb_prob = float(model.predict_proba(X)[0][1])
-            if lgbm_model is not None:
-                try:
-                    lgbm_prob = float(lgbm_model.predict_proba(X)[0][1])
-                    ens_prob = ensemble_weights[0]*xgb_prob + ensemble_weights[1]*lgbm_prob
-                except: ens_prob = xgb_prob
+            import re as _re
+
+            # ── STEP 1: Raw inputs from frontend ──────────────────────────────
+            admission_type = float(d.get("admission_type_id", 1))
+            discharge_disp = float(d.get("discharge_disposition_id", 1))
+            admission_src  = float(d.get("admission_source_id", 7))
+
+            # ── STEP 2: Medication encodings (0=No, 1=Down, 2=Steady, 3=Up) ──
+            # Map frontend string values to numeric before storing
+            med_str_map = {"No": 0, "Down": 1, "Steady": 2, "Up": 3}
+            med_names = [
+                "metformin","repaglinide","nateglinide","chlorpropamide","glimepiride",
+                "acetohexamide","glipizide","glyburide","tolbutamide","pioglitazone",
+                "rosiglitazone","acarbose","miglitol","troglitazone","tolazamide",
+                "examide","citoglipton","insulin","glyburide-metformin",
+                "glipizide-metformin","glimepiride-pioglitazone",
+                "metformin-rosiglitazone","metformin-pioglitazone"
+            ]
+            med_enc = {}
+            for m in med_names:
+                raw = d.get(m, d.get(m.replace("-","_"), 0))
+                if isinstance(raw, str):
+                    raw = med_str_map.get(raw, 0)
+                # normalize key to underscore for feat_vals dict
+                med_enc[_re.sub(r'[^A-Za-z0-9_]','_', m)] = float(raw)
+
+            # ── STEP 3: Derived medication features ───────────────────────────
+            active_med_vals  = list(med_enc.values())
+            num_meds_changed = sum(1 for v in active_med_vals if v in (1, 3))
+            num_active_meds  = sum(1 for v in active_med_vals if v > 0)
+            insulin_v        = med_enc.get("insulin", 0.0)
+            insulin_used     = int(insulin_v > 0)      # any insulin = used
+            insulin_changed  = int(insulin_v in (1, 3)) # Down or Up = changed
+
+            # ── STEP 4: Engineered features ───────────────────────────────────
+            total_vis    = n_out + n_er + n_inp
+            race         = d.get("race", "Caucasian")
+            gender_male  = int(d.get("gender", "Female") == "Male")
+            change_no    = int(change_enc == 1)   # "No" → 1 in change_map
+            diabmed_yes  = int(diabmed_enc == 1)
+
+            diag1 = int(d.get("diag_1_group", 0))
+            diag2 = int(d.get("diag_2_group", 0))
+            diag3 = int(d.get("diag_3_group", 0))
+
+            # ── STEP 5: Build complete feature dictionary ──────────────────────
+            feat_vals = {
+                # Core clinical
+                "age":                      age_v,
+                "admission_type_id":        admission_type,
+                "discharge_disposition_id": discharge_disp,
+                "admission_source_id":      admission_src,
+                "time_in_hospital":         time_hosp,
+                "num_lab_procedures":       num_lab,
+                "num_procedures":           num_proc,
+                "num_medications":          num_med,
+                "number_outpatient":        n_out,
+                "number_emergency":         n_er,
+                "number_inpatient":         n_inp,
+                "number_diagnoses":         n_diag,
+                # Medications (underscore keys)
+                **med_enc,
+                # Patient history
+                "patient_encounter_count":  enc_count,
+                "is_repeat_patient":        int(enc_count > 1),
+                "is_chronic_patient":       int(enc_count >= 3),
+                # Lab flags
+                "a1c_tested":               int(d.get("a1c_result","None") not in ("None","none",None,"")),
+                "a1c_high":                 int(d.get("a1c_result","None") in (">7",">8")),
+                "glucose_tested":           int(d.get("glucose_serum","None") not in ("None","none",None,"")),
+                "glucose_high":             int(d.get("glucose_serum","None") in (">200",">300")),
+                "glucose_very_high":        int(d.get("glucose_serum","None") == ">300"),
+                # Specialty flags
+                "high_risk_specialty":      int(d.get("high_risk_specialty", 0)),
+                "specialty_internal":       int(d.get("specialty","") == "InternalMedicine"),
+                "specialty_cardiology":     int(d.get("specialty","") == "Cardiology"),
+                # Discharge risk
+                "high_readmit_discharge":   int(discharge_disp in [6,22,3,7,5,2,4,25,15,10,12]),
+                # Diagnosis groups
+                "diag_1_group":             float(diag1),
+                "diag_2_group":             float(diag2),
+                "diag_3_group":             float(diag3),
+                "primary_diag_diabetes":    int(diag1 == 3),
+                "primary_diag_circulatory": int(diag1 == 7),
+                "any_circulatory":          int(diag1==7 or diag2==7 or diag3==7),
+                "any_respiratory":          int(diag1==8 or diag2==8 or diag3==8),
+                "n_unique_diag_groups":     len({diag1, diag2, diag3}),
+                # Medication summary
+                "num_meds_changed":         num_meds_changed,
+                "num_active_meds":          num_active_meds,
+                "insulin_used":             insulin_used,
+                "insulin_changed":          insulin_changed,
+                # Engineered
+                "total_visits":             total_vis,
+                "med_intensity":            num_med / (time_hosp + 1),
+                "lab_per_day":              num_lab / (time_hosp + 1),
+                "proc_per_day":             num_proc / (time_hosp + 1),
+                "diagnosis_severity":       n_diag*2 + num_proc + num_med,
+                "is_frequent_patient":      int(total_vis > 2),
+                "has_emergency_history":    int(n_er > 0),
+                "has_inpatient_history":    int(n_inp > 0),
+                "high_meds":                int(num_med > 15),
+                "long_stay":                int(time_hosp > 7),
+                "elderly":                  int(age_v >= 75),
+                "many_lab_procedures":      int(num_lab > 60),
+                "many_diagnoses":           int(n_diag >= 9),
+                # Interaction terms
+                "inpatient_x_diagnoses":    n_inp * n_diag,
+                "inpatient_x_emergency":    n_inp * n_er,
+                "age_x_inpatient":          age_v * n_inp,
+                "meds_x_diagnoses":         num_med * n_diag,
+                "encounter_x_inpatient":    enc_count * n_inp,
+                "encounter_x_emergency":    enc_count * n_er,
+                # One-hot categoricals
+                "race_Asian":               int(race == "Asian"),
+                "race_Caucasian":           int(race == "Caucasian"),
+                "race_Hispanic":            int(race == "Hispanic"),
+                "race_Other":               int(race == "Other"),
+                "race_Unknown":             int(race in ("Unknown","AfricanAmerican")),
+                "gender_Male":              gender_male,
+                "gender_Unknown_Invalid":   0,
+                "change_No":                change_no,
+                "diabetesMed_Yes":          diabmed_yes,
+            }
+
+            # ── STEP 6: Build feature vector using EXACT selected feature names ──
+            # Normalize both sides with same clean_col() logic as train_model.py
+            # so ANY name format mismatch is handled automatically forever.
+            def _norm(name):
+                return _re.sub(r'[^A-Za-z0-9_]', '_', str(name)).lower()
+
+            norm_feat_vals = {_norm(k): v for k, v in feat_vals.items()}
+
+            if selected_features_list:
+                feature_source = selected_features_list
             else:
-                ens_prob = xgb_prob
-            pred = 1 if ens_prob >= best_threshold else 0
-            result = "High Risk" if pred == 1 else "Low Risk"
-            prob = round(ens_prob * 100, 1)
+                # Fallback: use ALL_FEATURES list if pkl not loaded
+                feature_source = list(feat_vals.keys())
+
+            X_vec = np.array([[norm_feat_vals.get(_norm(f), 0.0) for f in feature_source]])
+
+            # ── STEP 7: Shape validation ──────────────────────────────────────
+            expected = model.n_features_in_
+            actual   = X_vec.shape[1]
+            print(f"✅ X_vec shape: {X_vec.shape}  |  Model expects: {expected}")
+
+            if actual != expected:
+                # Auto-fix: pad with zeros or trim to match model exactly
+                print(f"⚠️  Shape mismatch ({actual} vs {expected}) — auto-correcting")
+                if actual < expected:
+                    pad = np.zeros((1, expected - actual))
+                    X_vec = np.hstack([X_vec, pad])
+                else:
+                    X_vec = X_vec[:, :expected]
+                print(f"   Corrected shape: {X_vec.shape}")
+
+            # ── STEP 8: Run model prediction ──────────────────────────────────
+            try:
+                xgb_prob = float(model.predict_proba(X_vec)[0][1])
+                if lgbm_model is not None:
+                    lgbm_p   = float(lgbm_model.predict_proba(X_vec)[0][1])
+                    ens_prob = ensemble_weights[0]*xgb_prob + ensemble_weights[1]*lgbm_p
+                else:
+                    ens_prob = xgb_prob
+                pred   = 1 if ens_prob >= best_threshold else 0
+                result = "High Risk" if pred == 1 else "Low Risk"
+                prob   = round(ens_prob * 100, 1)
+            except Exception:
+                import traceback; traceback.print_exc()
+                pred, prob = clinical_score_predict(X_row)
+                result = "High Risk" if pred == 1 else "Low Risk"
         else:
-            pred,prob = clinical_score_predict(X_row)
+            pred, prob = clinical_score_predict(X_row)
             result = "High Risk" if pred == 1 else "Low Risk"
         conn = sqlite3.connect("database.db"); c = conn.cursor()
         c.execute("""INSERT INTO predictions
