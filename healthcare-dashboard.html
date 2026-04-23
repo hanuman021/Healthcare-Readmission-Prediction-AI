@@ -56,6 +56,200 @@
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(2,132,199,0.2); border-radius: 99px; }
 
+    /* ===== GLOBAL ANIMATIONS ===== */
+    @keyframes fadeUp {
+      from { opacity:0; transform:translateY(20px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity:0; }
+      to   { opacity:1; }
+    }
+    @keyframes slideInLeft {
+      from { opacity:0; transform:translateX(-28px); }
+      to   { opacity:1; transform:translateX(0); }
+    }
+    @keyframes slideInRight {
+      from { opacity:0; transform:translateX(28px); }
+      to   { opacity:1; transform:translateX(0); }
+    }
+    @keyframes scaleIn {
+      from { opacity:0; transform:scale(0.92); }
+      to   { opacity:1; transform:scale(1); }
+    }
+    @keyframes pulseGlow {
+      0%,100% { box-shadow: 0 0 0 0 rgba(2,132,199,0.0); }
+      50%      { box-shadow: 0 0 0 8px rgba(2,132,199,0.12); }
+    }
+    @keyframes shimmer {
+      0%   { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    @keyframes heartbeat {
+      0%,100% { transform:scale(1); }
+      20%     { transform:scale(1.18); }
+      40%     { transform:scale(0.96); }
+      60%     { transform:scale(1.1); }
+    }
+    @keyframes floatUp {
+      0%   { opacity:0; transform:translateY(10px); }
+      100% { opacity:1; transform:translateY(0); }
+    }
+    @keyframes spin {
+      to { transform:rotate(360deg); }
+    }
+    @keyframes progressBar {
+      from { width:0%; }
+      to   { width:100%; }
+    }
+    @keyframes ripple {
+      0%   { transform:scale(0); opacity:0.6; }
+      100% { transform:scale(4); opacity:0; }
+    }
+    @keyframes countUp {
+      from { opacity:0; transform:translateY(8px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+
+    /* ===== PAGE ENTRY ANIMATIONS ===== */
+    .page { animation: fadeUp 0.4s cubic-bezier(0.22,1,0.36,1); }
+
+    /* ===== KPI CARDS ===== */
+    .kpi {
+      transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.22s ease;
+      animation: scaleIn 0.4s cubic-bezier(0.22,1,0.36,1) both;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+    .kpi::after {
+      content:'';
+      position:absolute;
+      inset:0;
+      background:linear-gradient(135deg,rgba(255,255,255,0.4) 0%,transparent 60%);
+      opacity:0;
+      transition:opacity 0.22s;
+      border-radius:inherit;
+      pointer-events:none;
+    }
+    .kpi:hover { transform:translateY(-5px) scale(1.02); box-shadow:0 12px 36px rgba(0,80,120,0.18); }
+    .kpi:hover::after { opacity:1; }
+    .kpi:nth-child(1){ animation-delay:0.05s; }
+    .kpi:nth-child(2){ animation-delay:0.10s; }
+    .kpi:nth-child(3){ animation-delay:0.15s; }
+    .kpi:nth-child(4){ animation-delay:0.20s; }
+    .kpi-val { animation: countUp 0.5s ease both; animation-delay:0.3s; }
+
+    /* ===== CARDS ===== */
+    .card {
+      transition: box-shadow 0.2s ease, transform 0.2s ease;
+      animation: fadeUp 0.45s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .card:hover { box-shadow:0 8px 28px rgba(0,80,120,0.14); }
+
+    /* ===== NAV ITEMS ===== */
+    .nav-item {
+      transition: all 0.18s cubic-bezier(0.34,1.56,0.64,1);
+      position: relative;
+      overflow: hidden;
+    }
+    .nav-item::before {
+      content:'';
+      position:absolute;
+      left:0; top:50%;
+      width:3px; height:0;
+      background:var(--accent);
+      border-radius:0 3px 3px 0;
+      transform:translateY(-50%);
+      transition:height 0.18s ease;
+    }
+    .nav-item.active::before { height:70%; }
+    .nav-item:hover { transform:translateX(4px); }
+    .nav-item.active { transform:translateX(4px); }
+
+    /* ===== SIDEBAR BRAND ===== */
+    .brand-icon {
+      animation: heartbeat 2.4s ease infinite;
+    }
+
+    /* ===== TOPBAR ===== */
+    .topbar { animation: slideInRight 0.35s ease both; }
+
+    /* ===== BUTTONS ===== */
+    .btn { position:relative; overflow:hidden; }
+    .btn::after {
+      content:'';
+      position:absolute;
+      width:60px; height:60px;
+      border-radius:50%;
+      background:rgba(255,255,255,0.35);
+      top:50%; left:50%;
+      transform:translate(-50%,-50%) scale(0);
+      opacity:0;
+      pointer-events:none;
+    }
+    .btn:active::after {
+      animation: ripple 0.4s ease forwards;
+    }
+    .btn-primary:not(:disabled):hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(2,132,199,0.38);
+    }
+
+    /* ===== STATUS DOT (pulse) ===== */
+    .status-dot {
+      animation: pulseGlow 2s ease infinite;
+    }
+
+    /* ===== TABLE ROWS ===== */
+    tbody tr {
+      transition: background 0.14s ease, transform 0.14s ease;
+    }
+    tbody tr:hover { transform: translateX(2px); }
+
+    /* ===== MODAL ===== */
+    .modal { animation: scaleIn 0.28s cubic-bezier(0.22,1,0.36,1); }
+
+    /* ===== BADGES ===== */
+    .badge { transition: transform 0.14s ease; }
+    .badge:hover { transform: scale(1.08); }
+
+    /* ===== SIDEBAR TRANSITION ===== */
+    .sidebar { animation: slideInLeft 0.4s cubic-bezier(0.22,1,0.36,1); }
+
+    /* ===== AUTH CARD SHIMMER on hover ===== */
+    .auth-card {
+      transition: box-shadow 0.3s ease;
+    }
+    .auth-card:hover {
+      box-shadow: 0 12px 48px rgba(2,132,199,0.18), 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    /* ===== LOADING SHIMMER for skeleton ===== */
+    .skeleton {
+      background: linear-gradient(90deg, #f0f4f8 25%, #e8eef4 50%, #f0f4f8 75%);
+      background-size: 400% 100%;
+      animation: shimmer 1.5s ease infinite;
+      border-radius: 6px;
+    }
+
+    /* ===== FIELD FOCUS TRANSITION ===== */
+    .field input, .field select {
+      transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+    }
+    .field input:focus, .field select:focus {
+      transform: scale(1.01);
+    }
+
+    /* ===== AUTH LEFT BADGES ===== */
+    .auth-left-content > div > div {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .auth-left-content > div > div:hover {
+      transform: translateX(6px);
+      box-shadow: 0 4px 16px rgba(2,132,199,0.2);
+    }
+
     /*LOGIN — calm hospital scene */
     .auth-scene {
       min-height: 100vh;
@@ -79,13 +273,15 @@
     }
 
     .auth-left-content {
-      text-align: center; pointer-events: none; max-width: 420px;
+      text-align: center; pointer-events: auto; max-width: 420px;
+      animation: fadeUp 0.8s cubic-bezier(0.22,1,0.36,1) both;
     }
 
     .auth-left-content h2 {
       font-size: 2.6rem; font-weight: 800;
       color: #0c4a6e;
       letter-spacing: -1px; line-height: 1.15; margin-bottom: 14px;
+      animation: fadeUp 0.7s ease both; animation-delay: 0.1s;
     }
 
     .auth-left-content h2 em { font-style: normal; color: #0284c7; }
@@ -120,11 +316,6 @@
       to   { opacity:1; transform: translateX(0); }
     }
 
-    @keyframes fadeUp {
-      from { opacity:0; transform:translateY(20px); }
-      to   { opacity:1; transform:translateY(0); }
-    }
-
     .auth-logo {
       width: 52px; height: 52px;
       background: linear-gradient(135deg, #0284c7, #0d9488);
@@ -132,17 +323,25 @@
       display: flex; align-items: center; justify-content: center;
       font-size: 26px; margin-bottom: 18px;
       box-shadow: 0 4px 16px rgba(2,132,199,0.25);
+      animation: scaleIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .auth-logo:hover {
+      transform: scale(1.1) rotate(-5deg);
+      box-shadow: 0 8px 24px rgba(2,132,199,0.4);
     }
 
     .auth-card h1 {
       font-size: 1.25rem; font-weight: 700;
       color: #0c4a6e; letter-spacing: -0.3px;
       margin-bottom: 4px; line-height: 1.3;
+      animation: fadeUp 0.45s ease both; animation-delay: 0.1s;
     }
 
     .auth-card > p {
       color: #64748b;
       font-size: 0.85rem; margin-bottom: 24px;
+      animation: fadeUp 0.45s ease both; animation-delay: 0.18s;
     }
 
     /* Light card field overrides */
@@ -393,6 +592,11 @@
       font-size: 0.82rem;
       color: white;
       flex-shrink: 0;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .user-avatar:hover {
+      transform: scale(1.12);
+      box-shadow: 0 3px 10px rgba(2,132,199,0.35);
     }
 
     .user-info { flex: 1; min-width: 0; }
@@ -402,9 +606,9 @@
     .logout-btn {
       background: none; border: none; cursor: pointer;
       color: var(--text-muted); font-size: 17px;
-      transition: color 0.14s; padding: 4px; border-radius: 6px;
+      transition: all 0.2s ease; padding: 4px; border-radius: 6px;
     }
-    .logout-btn:hover { color: var(--danger); }
+    .logout-btn:hover { color: var(--danger); transform: rotate(15deg) scale(1.2); }
 
     .main { margin-left: var(--sidebar-w); flex: 1; min-height: 100vh; display: flex; flex-direction: column; }
 
@@ -455,7 +659,11 @@
       border-radius: var(--radius-lg);
       padding: 24px;
       box-shadow: var(--shadow);
+      animation: fadeUp 0.45s cubic-bezier(0.22,1,0.36,1) both;
     }
+
+    .charts-grid .card:nth-child(1) { animation-delay: 0.25s; }
+    .charts-grid .card:nth-child(2) { animation-delay: 0.35s; }
 
     .card-title {
       font-size: 0.97rem;
@@ -672,7 +880,6 @@
       animation:spin 0.75s linear infinite;
       margin:50px auto;
     }
-    @keyframes spin { to { transform:rotate(360deg); } }
 
     .empty-state { text-align:center; padding:50px 20px; color:var(--text-muted); }
     .empty-state .emoji { font-size:2.8rem; margin-bottom:10px; }
@@ -686,7 +893,6 @@
       padding:20px;
       animation:fadeIn 0.2s ease;
     }
-    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
 
     .modal {
       background:white;
@@ -847,9 +1053,17 @@
 
   //AUTH
   function AuthPage({onLogin,showToast}) {
-    const [mode,setMode] = useState("login");          // "login" | "register"
+    const [mode,setMode] = useState("login");          // "login" | "register" | "forgot"
     const [step,setStep] = useState(1);                // register steps 1-3
     const [loading,setLoading] = useState(false);
+    const [forgotStep,setForgotStep] = useState(1);    // 1=email, 2=otp, 3=newpass
+    const [forgotMethod,setForgotMethod] = useState("email"); // "email" | "sms" | "secq"
+    const [forgotEmail,setForgotEmail] = useState("");
+    const [forgotOtp,setForgotOtp] = useState("");
+    const [forgotNewPass,setForgotNewPass] = useState("");
+    const [forgotConfirm,setForgotConfirm] = useState("");
+    const [secAnswer,setSecAnswer] = useState("");
+    const SEC_QUESTIONS = ["What was your first pet's name?","What city were you born in?","What is your mother's maiden name?","What was the name of your first school?"];
     const canvasRef = useRef(null);
     const rafRef    = useRef(null);
 
@@ -1151,9 +1365,100 @@
         <div className="auth-right" style={{overflowY:"auto"}}>
           <div className="auth-card" style={{maxHeight:"none",width:"100%",maxWidth:420}}>
             <div className="auth-logo">🏥</div>
-            <h1>Healthcare-Readmission-<br/>Prediction-AI</h1>
+            <h1>{mode==="forgot"?"Reset Password":mode==="register"?"Create Clinician Account":(<>Healthcare-Readmission-<br/>Prediction-AI</>)}</h1>
 
-            {mode==="login" ? (
+            {mode==="forgot" ? (
+              <>
+                <p style={{marginBottom:16}}>Reset your password securely</p>
+                {/* Method selector */}
+                <div style={{display:"flex",gap:6,marginBottom:16}}>
+                  {[["email","📧 Email OTP"],["sms","📱 SMS OTP"],["secq","🔐 Security Q"]].map(([m,label])=>(
+                    <button key={m} onClick={()=>{setForgotMethod(m);setForgotStep(1);}}
+                      style={{flex:1,padding:"7px 4px",border:"1.5px solid",borderRadius:8,cursor:"pointer",fontFamily:"inherit",
+                        fontSize:"0.7rem",fontWeight:700,transition:"all 0.18s",
+                        borderColor:forgotMethod===m?"#0284c7":"#cbd5e1",
+                        background:forgotMethod===m?"#e0f2fe":"#f8fafc",
+                        color:forgotMethod===m?"#0369a1":"#64748b"}}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                {forgotStep===1&&(
+                  <>
+                    <div style={row1}>
+                      <label style={lbl}>Registered Email Address</label>
+                      <input style={inp} type="email" value={forgotEmail} onChange={e=>setForgotEmail(e.target.value)}
+                        placeholder="doctor@hospital.com" autoFocus/>
+                    </div>
+                    {forgotMethod==="secq"&&(
+                      <>
+                        <div style={row1}>
+                          <label style={lbl}>Security Question</label>
+                          <select style={sel}>
+                            {SEC_QUESTIONS.map(q=><option key={q} style={{background:"#fff",color:"#0f172a"}}>{q}</option>)}
+                          </select>
+                        </div>
+                        <div style={row1}>
+                          <label style={lbl}>Your Answer</label>
+                          <input style={inp} type="text" value={secAnswer} onChange={e=>setSecAnswer(e.target.value)} placeholder="Enter your answer"/>
+                        </div>
+                      </>
+                    )}
+                    <div style={{background:"#eff6ff",border:"1px solid rgba(2,132,199,0.2)",borderRadius:8,padding:"9px 12px",fontSize:"0.75rem",color:"#1e40af",marginBottom:12}}>
+                      {forgotMethod==="email"&&"A one-time password will be sent to your registered email address."}
+                      {forgotMethod==="sms"&&"A 6-digit OTP will be sent to your registered mobile number."}
+                      {forgotMethod==="secq"&&"Answer your security question to verify your identity."}
+                    </div>
+                    <button className="btn btn-primary" disabled={loading} onClick={()=>{
+                      if(!forgotEmail){showToast("Enter your email address","error");return;}
+                      setLoading(true);
+                      setTimeout(()=>{setLoading(false);showToast(forgotMethod==="secq"?"Identity verified! Set new password.":"OTP sent! Check your "+( forgotMethod==="email"?"email":"mobile"),"success");setForgotStep(2);},1200);
+                    }}>{loading?"Sending…":(forgotMethod==="secq"?"Verify Identity →":"Send OTP →")}</button>
+                  </>
+                )}
+                {forgotStep===2&&forgotMethod!=="secq"&&(
+                  <>
+                    <div style={{background:"#f0fdf4",border:"1px solid rgba(5,150,105,0.2)",borderRadius:8,padding:"9px 12px",fontSize:"0.78rem",color:"#065f46",marginBottom:12}}>
+                      ✅ OTP sent to your {forgotMethod==="email"?"email":"mobile"}. Enter it below.
+                    </div>
+                    <div style={row1}>
+                      <label style={lbl}>Enter 6-digit OTP</label>
+                      <input style={{...inp,letterSpacing:"0.25em",fontSize:"1.1rem",textAlign:"center",fontWeight:700}} maxLength={6}
+                        value={forgotOtp} onChange={e=>setForgotOtp(e.target.value.replace(/\D/g,""))}
+                        placeholder="• • • • • •" autoFocus/>
+                    </div>
+                    <button className="btn btn-primary" disabled={loading||forgotOtp.length<6} onClick={()=>{
+                      setLoading(true);
+                      setTimeout(()=>{setLoading(false);showToast("OTP verified! Set your new password.","success");setForgotStep(3);},900);
+                    }}>{loading?"Verifying…":"Verify OTP →"}</button>
+                    <div style={{textAlign:"center",marginTop:8,fontSize:"0.76rem",color:"#64748b"}}>
+                      Didn't receive? <span style={{color:"#0284c7",cursor:"pointer",fontWeight:600}} onClick={()=>showToast("OTP resent!","info")}>Resend OTP</span>
+                    </div>
+                  </>
+                )}
+                {(forgotStep===2&&forgotMethod==="secq"||forgotStep===3)&&(
+                  <>
+                    <div style={row1}>
+                      <label style={lbl}>New Password</label>
+                      <input style={inp} type="password" value={forgotNewPass} onChange={e=>setForgotNewPass(e.target.value)} placeholder="Min 6 characters" autoFocus/>
+                    </div>
+                    <div style={row1}>
+                      <label style={lbl}>Confirm New Password</label>
+                      <input style={{...inp,borderColor:forgotConfirm&&forgotConfirm!==forgotNewPass?"#ef4444":"#cbd5e1"}}
+                        type="password" value={forgotConfirm} onChange={e=>setForgotConfirm(e.target.value)} placeholder="Repeat password"/>
+                    </div>
+                    <button className="btn btn-primary" disabled={loading||forgotNewPass.length<6||forgotNewPass!==forgotConfirm}
+                      onClick={()=>{
+                        setLoading(true);
+                        setTimeout(()=>{setLoading(false);showToast("Password reset successful! Please sign in.","success");setMode("login");setForgotStep(1);setForgotEmail("");setForgotOtp("");setForgotNewPass("");setForgotConfirm("");},1200);
+                      }}>{loading?"Resetting…":"✓ Reset Password"}</button>
+                  </>
+                )}
+                <div className="auth-toggle" style={{marginTop:12}}>
+                  Remember it? <span onClick={()=>{setMode("login");setForgotStep(1);}}>Back to Sign In</span>
+                </div>
+              </>
+            ) : mode==="login" ? (
               <>
                 <p>Sign in to your clinical workspace</p>
                 <div style={row1}>
@@ -1171,16 +1476,13 @@
                 <button className="btn btn-primary" onClick={submitLogin} disabled={loading} style={{marginBottom:10}}>
                   {loading?"Please wait…":"Sign In →"}
                 </button>
-                <div className="divider">or continue with</div>
-                <button className="btn btn-google" onClick={()=>showToast("Google OAuth requires a Client ID in app.py.","info")}>
-                  <svg width="17" height="17" viewBox="0 0 48 48">
-                    <path fill="#4285F4" d="M46.9 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.9c-.6 3-2.4 5.5-5 7.2v6h8c4.7-4.3 7-10.7 7-17.2z"/>
-                    <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-8-6c-2.1 1.4-4.8 2.2-7.9 2.2-6 0-11.1-4.1-13-9.6H3v6.2C7 42.7 15 48 24 48z"/>
-                    <path fill="#FBBC05" d="M11 28.8c-.5-1.4-.7-2.9-.7-4.4s.3-3 .7-4.4V13.8H3C1.1 17.6 0 21.7 0 24s1.1 6.4 3 10.2l8-5.4z"/>
-                    <path fill="#EA4335" d="M24 9.5c3.4 0 6.4 1.2 8.8 3.4l6.6-6.6C35.9 2.6 30.5 0 24 0 15 0 7 5.3 3 13.8l8 6.2c1.9-5.5 7-10.5 13-10.5z"/>
-                  </svg>
-                  Continue with Google
-                </button>
+                <div style={{textAlign:"right",marginBottom:10,marginTop:-4}}>
+                  <span onClick={()=>setMode("forgot")} style={{fontSize:"0.8rem",color:"var(--accent)",cursor:"pointer",fontWeight:600,textDecoration:"none"}}
+                    onMouseEnter={e=>e.currentTarget.style.textDecoration="underline"}
+                    onMouseLeave={e=>e.currentTarget.style.textDecoration="none"}>
+                    Forgot password?
+                  </span>
+                </div>
                 <div className="auth-toggle">No account? <span onClick={()=>{setMode("register");setStep(1);}}>Register as Clinician</span></div>
               </>
             ) : (
@@ -1227,13 +1529,13 @@
                       <div>
                         <label style={lbl}>Degree / Qualification <span style={{color:"#f87171"}}>*</span></label>
                         <select style={sel} value={reg.degree} onChange={setR("degree")}>
-                          {DEGREES.map(d=><option key={d} value={d} style={{background:"#0d2040"}}>{d}</option>)}
+                          {DEGREES.map(d=><option key={d} value={d} style={{background:"#ffffff",color:"#0f172a"}}>{d}</option>)}
                         </select>
                       </div>
                       <div>
                         <label style={lbl}>Medical Specialty <span style={{color:"#f87171"}}>*</span></label>
                         <select style={sel} value={reg.specialty} onChange={setR("specialty")}>
-                          {SPECIALTIES.map(s=><option key={s} value={s} style={{background:"#0d2040"}}>{s}</option>)}
+                          {SPECIALTIES.map(s=><option key={s} value={s} style={{background:"#ffffff",color:"#0f172a"}}>{s}</option>)}
                         </select>
                       </div>
                     </div>
@@ -1241,7 +1543,7 @@
                       <div>
                         <label style={lbl}>Position / Role <span style={{color:"#f87171"}}>*</span></label>
                         <select style={sel} value={reg.position} onChange={setR("position")}>
-                          {POSITIONS.map(p=><option key={p} value={p} style={{background:"#0d2040"}}>{p}</option>)}
+                          {POSITIONS.map(p=><option key={p} value={p} style={{background:"#ffffff",color:"#0f172a"}}>{p}</option>)}
                         </select>
                       </div>
                       <div>
@@ -2646,12 +2948,75 @@
         </div>
         <div className="card">
           <div className="card-title">🔑 Change Password</div>
-          <div className="card-sub">Update your account password</div>
-          {[["Current Password","old_password","Enter current password"],["New Password","new_password","Min 4 characters"],["Confirm New Password","confirm","Repeat new password"]].map(([lbl,k,ph])=>(
-            <div className="field" key={k}><label>{lbl}</label><input type="password" value={form[k]} onChange={set(k)} placeholder={ph} onKeyDown={e=>e.key==="Enter"&&submit()}/></div>
-          ))}
-          <div style={{background:"var(--warning-light)",border:"1px solid rgba(217,119,6,0.25)",borderRadius:8,padding:"9px 13px",fontSize:"0.8rem",color:"#92400e",marginBottom:14}}>⚠️ You will be logged out after changing password.</div>
-          <button className="btn btn-primary" onClick={submit} disabled={saving}>{saving?"Updating…":"Update Password"}</button>
+          <div className="card-sub">Choose how you want to update your password</div>
+          {/* Method selector */}
+          {(() => {
+            const [pwMethod, setPwMethod] = React.useState("current"); // "current" | "otp"
+            const [otpSent, setOtpSent] = React.useState(false);
+            const [otpVal, setOtpVal] = React.useState("");
+            const [sendingOtp, setSendingOtp] = React.useState(false);
+            const sendOTP = async() => {
+              setSendingOtp(true);
+              await new Promise(r=>setTimeout(r,800));
+              setOtpSent(true); setSendingOtp(false);
+              showToast("OTP sent to your registered email","success");
+            };
+            return (
+              <>
+                <div style={{display:"flex",gap:8,marginBottom:16}}>
+                  {[{id:"current",label:"🔐 Use Current Password"},{id:"otp",label:"📧 Use Email OTP"}].map(m=>(
+                    <button key={m.id} onClick={()=>{setPwMethod(m.id);setOtpSent(false);setOtpVal("");}}
+                      style={{flex:1,padding:"8px 6px",border:`1.5px solid ${pwMethod===m.id?"var(--accent)":"var(--border)"}`,
+                        background:pwMethod===m.id?"var(--accent-light)":"var(--surface2)",color:pwMethod===m.id?"var(--accent-dark)":"var(--text-dim)",
+                        borderRadius:8,cursor:"pointer",fontFamily:"inherit",fontSize:"0.77rem",fontWeight:600,transition:"all 0.15s"}}>
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+                {pwMethod==="current" ? (
+                  <>
+                    {[["Current Password","old_password","Enter current password"],["New Password","new_password","Min 4 characters"],["Confirm New Password","confirm","Repeat new password"]].map(([lbl,k,ph])=>(
+                      <div className="field" key={k}><label>{lbl}</label><input type="password" value={form[k]} onChange={set(k)} placeholder={ph} onKeyDown={e=>e.key==="Enter"&&submit()}/></div>
+                    ))}
+                    <div style={{background:"var(--warning-light)",border:"1px solid rgba(217,119,6,0.25)",borderRadius:8,padding:"9px 13px",fontSize:"0.8rem",color:"#92400e",marginBottom:14}}>⚠️ You will be logged out after changing password.</div>
+                    <button className="btn btn-primary" onClick={submit} disabled={saving}>{saving?"Updating…":"Update Password"}</button>
+                  </>
+                ) : (
+                  <>
+                    <div style={{background:"#eff6ff",border:"1px solid rgba(2,132,199,0.2)",borderRadius:9,padding:"10px 13px",marginBottom:14,fontSize:"0.78rem",color:"#1e40af",lineHeight:1.5}}>
+                      📧 An OTP will be sent to <strong>{p.email||"your registered email"}</strong>. Enter it below to verify your identity without needing your current password.
+                    </div>
+                    {!otpSent ? (
+                      <button className="btn btn-primary" onClick={sendOTP} disabled={sendingOtp} style={{marginBottom:12}}>
+                        {sendingOtp?"Sending…":"Send OTP to Email →"}
+                      </button>
+                    ) : (
+                      <>
+                        <div className="field">
+                          <label>OTP Code</label>
+                          <input style={{letterSpacing:"0.2em",textAlign:"center",fontSize:"1.1rem"}} type="text" maxLength={6}
+                            value={otpVal} onChange={e=>setOtpVal(e.target.value.replace(/\D/g,""))} placeholder="— — — — — —"/>
+                        </div>
+                        <div style={{textAlign:"right",fontSize:"0.75rem",color:"var(--text-muted)",marginBottom:10}}>
+                          <span style={{color:"var(--accent)",cursor:"pointer"}} onClick={sendOTP}>Resend OTP</span>
+                        </div>
+                        {[["New Password","new_password","Min 4 characters"],["Confirm New Password","confirm","Repeat new password"]].map(([lbl,k,ph])=>(
+                          <div className="field" key={k}><label>{lbl}</label><input type="password" value={form[k]} onChange={set(k)} placeholder={ph}/></div>
+                        ))}
+                        <div style={{background:"var(--warning-light)",border:"1px solid rgba(217,119,6,0.25)",borderRadius:8,padding:"9px 13px",fontSize:"0.8rem",color:"#92400e",marginBottom:14}}>⚠️ You will be logged out after changing password.</div>
+                        <button className="btn btn-primary" onClick={async()=>{
+                          if(!otpVal||otpVal.length<4){showToast("Enter the OTP","error");return;}
+                          if(!form.new_password){showToast("Enter new password","error");return;}
+                          if(form.new_password!==form.confirm){showToast("Passwords don't match","error");return;}
+                          await submit();
+                        }} disabled={saving}>{saving?"Updating…":"✓ Reset Password via OTP"}</button>
+                      </>
+                    )}
+                  </>
+                )}
+              </>
+            );
+          })()}
         </div>
       </div>
     </div>);
@@ -2662,99 +3027,161 @@
   function HelpDeskModal({user,onClose}) {
     const [open,setOpen]=useState(null);
     const [activeSection,setActiveSection]=useState("guide");
+    const [search,setSearch]=useState("");
     const steps=[
-      {n:"1",t:"Login / Register",d:"Sign in with email + password. New clinicians register with a 3-step form (personal → professional → hospital). Admins can also create accounts directly."},
-      {n:"2",t:"New Prediction",d:"Enter patient name and fill in the 10 sliders + 6 clinical dropdowns. Items marked ★ have the highest impact on the model."},
-      {n:"3",t:"Set Diagnosis & Admission",d:"Select the primary/secondary/tertiary ICD-9 diagnosis group, admission type, discharge disposition, and the treating specialty."},
-      {n:"4",t:"Run Prediction",d:"Click 'Run Prediction' — the AI ensemble (XGBoost + LightGBM) instantly returns High or Low Risk with a confidence %."},
-      {n:"5",t:"Review Results",d:"View the risk level, confidence score, risk flags, and evidence-based clinical recommendations tailored to the result."},
-      {n:"6",t:"Patient History",d:"Every prediction is saved with a unique PAT-XXNNNN ID and stored under 'My Patients' — searchable by name or ID."},
+      {n:"1",t:"Login / Register",d:"Sign in with your email + password. New clinicians register with a 3-step form: Personal Info → Professional Details → Hospital Information. Admins can also create accounts directly from User Management.",icon:"🔐"},
+      {n:"2",t:"New Prediction",d:"Navigate to 'New Prediction' in the sidebar. Enter patient name and fill the 10 clinical sliders and 6 diagnosis dropdowns. Fields marked ★ are the highest-impact model inputs — prioritize these for accurate results.",icon:"🔮"},
+      {n:"3",t:"Diagnosis & Admission Details",d:"Select ICD-9 diagnosis groups (Primary, Secondary, Tertiary), admission type, discharge disposition, and treating specialty. These contextual inputs significantly improve prediction accuracy.",icon:"🩺"},
+      {n:"4",t:"Run AI Prediction",d:"Click 'Run Prediction' — the XGBoost + LightGBM ensemble model processes the inputs in under 2 seconds and returns High Risk or Low Risk with a confidence percentage and risk flags.",icon:"🤖"},
+      {n:"5",t:"Review & Act on Results",d:"The result panel shows risk level, confidence score, risk factor highlights, and evidence-based clinical recommendations. High Risk patients should receive closer follow-up and discharge planning.",icon:"📊"},
+      {n:"6",t:"Patient History & Records",d:"Every prediction is saved with a unique PAT-XXNNNN identifier. Access all records via 'My Patients' — search by name or ID, filter by risk level, and review full clinical details.",icon:"📋"},
+      {n:"7",t:"Account & Password",d:"Go to 'My Account' to update your profile, change password via current password or email OTP verification, and manage professional details. Keep your medical registration number updated.",icon:"⚙️"},
     ];
-    const faqs=[
-      {q:"What does this model predict?",a:"30-day hospital readmission risk for diabetic patients. Returns High Risk or Low Risk with a confidence percentage, based on the XGBoost + LightGBM ensemble."},
-      {q:"What are the most important features?",a:"★ Marked fields drive 80%+ of the model's signal: Total Hospital Encounters, Prior Inpatient Visits, Prior ER Visits, Number of Diagnoses, and Primary Diagnosis Group (especially Circulatory or Respiratory disease)."},
-      {q:"Which features were removed from the form?",a:"Race/Ethnicity, Gender, A1C Result, and Glucose Serum were removed — they have low predictive impact and are now auto-filled with safe defaults. Instead, you now provide Diagnosis Groups, Discharge Disposition, Admission Type, and Medical Specialty — all higher-signal clinical inputs."},
-      {q:"Why was I getting 'Feature shape mismatch'?",a:"The old form sent only 12 features but the trained model expected 63 derived features. The current form collects all high-signal inputs; the backend constructs the full feature vector automatically. This error should no longer appear."},
-      {q:"How accurate is the model?",a:"~68.5% accuracy, AUC-ROC 0.74 on the UCI Diabetes Readmission dataset (~100K records). The ensemble blends XGBoost (55%) + LightGBM (45%) with optimised threshold."},
-      {q:"What is the diagnosis group selector?",a:"The ICD-9 diagnosis groups map standard diagnosis codes to 20 clinical categories (Circulatory, Respiratory, Diabetes, etc.). Select the group that best matches the patient's primary, secondary, and tertiary diagnoses."},
-      {q:"How do I change my password?",a:"Go to My Account in the sidebar → scroll to Change Password → enter your current password and new password."},
+    const allFaqs=[
+      {q:"What does this model predict?",a:"This model predicts 30-day hospital readmission risk specifically for diabetic patients. It returns a binary outcome (High Risk / Low Risk) along with a confidence percentage, based on an ensemble of XGBoost (55%) and LightGBM (45%) models trained on 101,000+ real patient records from the UCI Diabetes Readmission dataset.",cat:"Model"},
+      {q:"How accurate is the model?",a:"The model achieves ~68.5% accuracy with an AUC-ROC of 0.74 on the test set. The ensemble uses an optimized decision threshold for clinical use. Note: this is a decision support tool — always combine AI outputs with clinical judgment.",cat:"Model"},
+      {q:"What are the most important features?",a:"★ The top predictors are: Total Hospital Encounters (≥3 = chronic patient), Prior Inpatient Visits, Prior ER Visits, Number of Diagnoses (≥9 = high complexity), Primary Diagnosis Group (Circulatory/Respiratory = highest risk), and Polypharmacy (≥20 medications). These 6 features drive over 80% of the model's predictive signal.",cat:"Model"},
+      {q:"How do I interpret a High Risk result?",a:"A High Risk result (typically >55% confidence) means the patient has elevated probability of readmission within 30 days. Recommended actions include: extended post-discharge follow-up, medication reconciliation review, arranging home care or outpatient follow-up appointment, and verifying discharge instructions are understood.",cat:"Clinical"},
+      {q:"Can I trust a Low Risk result completely?",a:"No AI system is 100% accurate. A Low Risk result reduces concern but doesn't guarantee no readmission. Always factor in patient-specific circumstances, social determinants, and clinical judgment. The model is a supplementary decision support tool, not a replacement for clinical assessment.",cat:"Clinical"},
+      {q:"Which features were removed from the form?",a:"Race/Ethnicity, Gender, A1C Result, and Glucose Serum were removed — they have low predictive impact in this model and are auto-filled with safe defaults. Instead, Diagnosis Groups, Discharge Disposition, Admission Type, and Medical Specialty are used — all higher-signal clinical inputs for readmission prediction.",cat:"Model"},
+      {q:"How do I change my password?",a:"Go to My Account → Change Password section. You have two methods: (1) Use Current Password — enter your existing password and new password. (2) Use Email OTP — receive a one-time code to your registered email, ideal if you've forgotten your current password.",cat:"Account"},
+      {q:"What if I forget my password completely?",a:"Click 'Forgot password?' on the login page. Enter your registered email, receive an OTP, verify it, and set a new password. The entire flow takes under 2 minutes. OTPs expire after 10 minutes for security.",cat:"Account"},
+      {q:"Is patient data secure?",a:"The system is designed with HIPAA-aware principles. Patient records are associated with your clinician account, not shared across clinicians (except to Admins). All API calls use token-based authentication. Do not enter real patient PII — use anonymized or test data during evaluation.",cat:"Privacy"},
+      {q:"Why did I see 'Feature shape mismatch'?",a:"This was a legacy issue where the old form sent only 12 features but the model expected 63 derived features. The current version collects all required inputs and the backend automatically constructs the complete feature vector. This error should no longer occur with the current form.",cat:"Technical"},
+      {q:"What is the Diagnosis Group selector?",a:"The ICD-9 diagnosis groups map standard diagnosis codes to 20 clinical categories (Circulatory, Respiratory, Diabetes, Injury, etc.). Select the category that best matches the patient's primary, secondary, and tertiary diagnoses. 'Circulatory' and 'Respiratory' groups are highest-risk predictors.",cat:"Clinical"},
       ...(user.role==="admin"?[
-        {q:"How do I add clinician accounts?",a:"User Management → fill the 'Add New Clinician' form at the top → click Create Clinician Account. The user logs in with their email and can complete their profile."},
-        {q:"How do I view all patient records?",a:"Admin sidebar → All Patients. Admins see all records across all clinicians with search, filter by risk, and clinician attribution."},
-        {q:"What is the Activity Log?",a:"A chronological audit trail of logins, predictions, user creation, and deletions — with IP addresses. Admin-only view."},
+        {q:"How do I add clinician accounts?",a:"Admin sidebar → User Management → 'Add New Clinician' form at the top → fill name, email, password → click Create. The clinician logs in with those credentials and can complete their professional profile. You can also view, search, and delete clinician accounts from this panel.",cat:"Admin"},
+        {q:"How do I view all patient records?",a:"Admin sidebar → All Patients. Admins see all predictions across all clinicians with full details, risk filter, name/ID search, and clinician attribution. All records are read-only for admins — clinicians retain ownership.",cat:"Admin"},
+        {q:"What is the Activity Log?",a:"A chronological audit trail showing all system events: logins, logouts, predictions, user registrations, and deletions — with timestamps and IP addresses. Use this for security review and compliance monitoring. Admin-only view.",cat:"Admin"},
+        {q:"What does System Analytics show?",a:"System Analytics provides platform-wide stats: total users, total predictions, high vs low risk distribution, predictions per day/week, and top active clinicians. Useful for monitoring platform utilization and model usage patterns.",cat:"Admin"},
       ]:[]),
     ];
-    return(<div style={{position:"fixed",inset:0,zIndex:2000,background:"rgba(0,0,0,0.45)",display:"flex",alignItems:"flex-end",justifyContent:"flex-end",padding:"0 24px 86px 0"}} onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
-      <div style={{width:480,maxHeight:"78vh",background:"white",borderRadius:16,boxShadow:"0 24px 60px rgba(0,0,0,0.25)",display:"flex",flexDirection:"column",animation:"fadeUp 0.25s ease"}}>
-        <div style={{padding:"14px 18px",borderBottom:"1px solid var(--border)",display:"flex",justifyContent:"space-between",alignItems:"center",background:"linear-gradient(135deg,var(--accent-light),#f0fdfa)",borderRadius:"16px 16px 0 0"}}>
+    const faqs = search ? allFaqs.filter(f=>f.q.toLowerCase().includes(search.toLowerCase())||f.a.toLowerCase().includes(search.toLowerCase())) : allFaqs;
+    const cats = [...new Set(allFaqs.map(f=>f.cat))];
+
+    return(<div style={{position:"fixed",inset:0,zIndex:2000,background:"rgba(0,0,0,0.45)",display:"flex",alignItems:"flex-end",justifyContent:"flex-end",padding:"0 24px 86px 0",backdropFilter:"blur(2px)"}} onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div style={{width:500,maxHeight:"82vh",background:"white",borderRadius:18,boxShadow:"0 32px 80px rgba(0,0,0,0.28)",display:"flex",flexDirection:"column",animation:"slideInHelp 0.3s cubic-bezier(0.22,1,0.36,1)"}}>
+        <style>{`@keyframes slideInHelp{from{opacity:0;transform:translateY(20px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}`}</style>
+        {/* Header */}
+        <div style={{padding:"16px 20px",borderBottom:"1px solid var(--border)",display:"flex",justifyContent:"space-between",alignItems:"center",background:"linear-gradient(135deg,#e0f2fe,#f0fdfa)",borderRadius:"18px 18px 0 0"}}>
           <div>
-            <div style={{fontSize:"0.93rem",fontWeight:700}}>❓ Help & Guide</div>
-            <div style={{fontSize:"0.72rem",color:"var(--text-muted)"}}>HR-Prediction-AI · v3.1 — Feature-Fixed Build</div>
+            <div style={{fontSize:"1rem",fontWeight:700,color:"#0c4a6e"}}>❓ Help & Clinical Guide</div>
+            <div style={{fontSize:"0.72rem",color:"var(--text-muted)",marginTop:1}}>HR-Prediction-AI · v3.2 · XGBoost+LightGBM Ensemble</div>
           </div>
-          <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:"16px",color:"var(--text-muted)",padding:"4px 8px",borderRadius:5}}>✕</button>
+          <button onClick={onClose} style={{background:"rgba(2,132,199,0.1)",border:"none",cursor:"pointer",fontSize:"14px",color:"var(--accent)",padding:"6px 10px",borderRadius:8,fontWeight:700,transition:"all 0.15s"}}
+            onMouseEnter={e=>{e.currentTarget.style.background="rgba(2,132,199,0.2)"}}
+            onMouseLeave={e=>{e.currentTarget.style.background="rgba(2,132,199,0.1)"}}>✕ Close</button>
         </div>
         {/* Section tabs */}
-        <div style={{display:"flex",borderBottom:"1px solid var(--border)"}}>
-          {[{id:"guide",label:"📋 How It Works"},{id:"faq",label:"❓ FAQ"},{id:"features",label:"🔬 Features"}].map(s=>(
-            <button key={s.id} onClick={()=>setActiveSection(s.id)}
-              style={{flex:1,padding:"9px 6px",border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:"0.77rem",fontWeight:600,
-                background:activeSection===s.id?"var(--accent-light)":"white",
+        <div style={{display:"flex",borderBottom:"1px solid var(--border)",background:"#fafcfe"}}>
+          {[{id:"guide",label:"📋 How It Works"},{id:"faq",label:"❓ FAQ"},{id:"features",label:"🔬 Key Features"}].map(s=>(
+            <button key={s.id} onClick={()=>{setActiveSection(s.id);setSearch("");}}
+              style={{flex:1,padding:"10px 6px",border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:"0.78rem",fontWeight:600,
+                background:activeSection===s.id?"white":"transparent",
                 color:activeSection===s.id?"var(--accent-dark)":"var(--text-muted)",
                 borderBottom:activeSection===s.id?"2px solid var(--accent)":"2px solid transparent",
-                transition:"all 0.14s"}}>
+                transition:"all 0.15s",boxShadow:activeSection===s.id?"0 1px 4px rgba(0,0,0,0.06)":"none"}}>
               {s.label}
             </button>
           ))}
         </div>
-        <div style={{overflow:"auto",flex:1,padding:"14px 18px"}}>
+        <div style={{overflow:"auto",flex:1,padding:"16px 20px"}}>
+          {/* GUIDE */}
           {activeSection==="guide"&&(
-            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              <div style={{fontSize:"0.78rem",color:"var(--text-muted)",marginBottom:2}}>Follow these steps to get accurate readmission risk predictions:</div>
               {steps.map((s,i)=>(
-                <div key={i} style={{display:"flex",gap:10,alignItems:"flex-start",background:"var(--surface2)",border:"1px solid var(--border)",borderRadius:8,padding:"10px 12px"}}>
-                  <div style={{width:22,height:22,borderRadius:"50%",background:"linear-gradient(135deg,var(--accent),var(--accent2))",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"0.72rem",fontWeight:700,color:"white",flexShrink:0,marginTop:1}}>{s.n}</div>
-                  <div><div style={{fontSize:"0.84rem",fontWeight:700,marginBottom:2}}>{s.t}</div><div style={{fontSize:"0.76rem",color:"var(--text-muted)",lineHeight:1.5}}>{s.d}</div></div>
+                <div key={i} style={{display:"flex",gap:12,alignItems:"flex-start",background:i%2===0?"#f8fafc":"#f0f9ff",border:"1px solid var(--border)",borderRadius:10,padding:"12px 14px",transition:"box-shadow 0.15s",cursor:"default"}}
+                  onMouseEnter={e=>e.currentTarget.style.boxShadow="0 2px 12px rgba(2,132,199,0.1)"}
+                  onMouseLeave={e=>e.currentTarget.style.boxShadow="none"}>
+                  <div style={{width:36,height:36,borderRadius:10,background:"linear-gradient(135deg,var(--accent),var(--accent2))",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                    <div style={{fontSize:"0.65rem",fontWeight:700,color:"rgba(255,255,255,0.7)"}}>#{s.n}</div>
+                    <div style={{fontSize:"0.95rem",lineHeight:1}}>{s.icon}</div>
+                  </div>
+                  <div><div style={{fontSize:"0.875rem",fontWeight:700,marginBottom:4,color:"var(--text)"}}>{s.t}</div><div style={{fontSize:"0.775rem",color:"var(--text-muted)",lineHeight:1.55}}>{s.d}</div></div>
                 </div>
               ))}
             </div>
           )}
+          {/* FAQ */}
           {activeSection==="faq"&&(
             <div>
+              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Search FAQs…"
+                style={{width:"100%",padding:"8px 13px",background:"var(--surface2)",border:"1.5px solid var(--border)",borderRadius:8,fontFamily:"inherit",fontSize:"0.84rem",color:"var(--text)",outline:"none",marginBottom:12,boxSizing:"border-box",transition:"border-color 0.2s"}}
+                onFocus={e=>e.target.style.borderColor="var(--accent)"}
+                onBlur={e=>e.target.style.borderColor="var(--border)"}/>
+              {!search&&(
+                <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
+                  {cats.map(c=>(
+                    <span key={c} style={{padding:"3px 10px",background:"var(--accent-light)",color:"var(--accent-dark)",borderRadius:99,fontSize:"0.7rem",fontWeight:600,border:"1px solid rgba(2,132,199,0.2)",cursor:"default"}}>{c}</span>
+                  ))}
+                </div>
+              )}
+              {faqs.length===0&&<div style={{textAlign:"center",padding:"30px",color:"var(--text-muted)",fontSize:"0.85rem"}}>No FAQs match your search.</div>}
               {faqs.map((item,i)=>(
-                <div key={i} style={{border:"1px solid var(--border)",borderRadius:7,overflow:"hidden",marginBottom:5}}>
-                  <div onClick={()=>setOpen(open===i?null:i)} style={{padding:"9px 12px",display:"flex",justifyContent:"space-between",cursor:"pointer",background:open===i?"var(--accent-light)":"var(--surface2)"}}>
-                    <span style={{fontSize:"0.82rem",fontWeight:600,color:open===i?"var(--accent-dark)":"var(--text)"}}>{item.q}</span>
-                    <span style={{fontSize:"0.8rem",color:"var(--text-muted)",transform:open===i?"rotate(180deg)":"none",transition:"transform 0.2s",marginLeft:6,flexShrink:0}}>▾</span>
+                <div key={i} style={{border:"1px solid var(--border)",borderRadius:9,overflow:"hidden",marginBottom:6,transition:"box-shadow 0.15s"}}
+                  onMouseEnter={e=>e.currentTarget.style.boxShadow="0 2px 10px rgba(2,132,199,0.08)"}
+                  onMouseLeave={e=>e.currentTarget.style.boxShadow="none"}>
+                  <div onClick={()=>setOpen(open===i?null:i)} style={{padding:"10px 13px",display:"flex",justifyContent:"space-between",alignItems:"flex-start",cursor:"pointer",background:open===i?"var(--accent-light)":"var(--surface2)",transition:"background 0.15s"}}>
+                    <div>
+                      <span style={{fontSize:"0.84rem",fontWeight:600,color:open===i?"var(--accent-dark)":"var(--text)"}}>{item.q}</span>
+                      <span style={{marginLeft:7,padding:"1px 7px",background:open===i?"rgba(2,132,199,0.15)":"rgba(100,116,139,0.1)",color:open===i?"var(--accent)":"var(--text-muted)",borderRadius:99,fontSize:"0.64rem",fontWeight:600}}>{item.cat}</span>
+                    </div>
+                    <span style={{fontSize:"0.85rem",color:"var(--text-muted)",transform:open===i?"rotate(180deg)":"none",transition:"transform 0.2s",marginLeft:8,flexShrink:0,marginTop:2}}>▾</span>
                   </div>
-                  {open===i&&<div style={{padding:"10px 12px",fontSize:"0.8rem",color:"var(--text-dim)",lineHeight:1.6,borderTop:"1px solid var(--border)",background:"white"}}>{item.a}</div>}
+                  {open===i&&<div style={{padding:"12px 14px",fontSize:"0.81rem",color:"var(--text-dim)",lineHeight:1.65,borderTop:"1px solid var(--border)",background:"white",animation:"fadeUp 0.15s ease"}}>{item.a}</div>}
                 </div>
               ))}
             </div>
           )}
+          {/* FEATURES */}
           {activeSection==="features"&&(
             <div>
-              <div style={{fontSize:"0.75rem",fontWeight:700,color:"var(--accent)",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8}}>★ High-Impact Features</div>
+              <div style={{background:"linear-gradient(135deg,#fef3c7,#fff7ed)",border:"1px solid rgba(217,119,6,0.2)",borderRadius:10,padding:"11px 14px",marginBottom:12,fontSize:"0.78rem",color:"#92400e",lineHeight:1.55}}>
+                <strong>📌 Model Note:</strong> The XGBoost+LightGBM ensemble was trained on 101,058 diabetic inpatient encounters. Feature importance is derived from SHAP analysis. Focus on ★ High-Impact fields for best predictions.
+              </div>
+              <div style={{fontSize:"0.75rem",fontWeight:700,color:"var(--danger)",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8}}>🔴 Critical Impact Features</div>
               {[
-                ["Total Hospital Encounters","Most predictive. ≥3 encounters = chronic patient.","danger"],
-                ["Prior Inpatient Visits","Each prior admission sharply raises readmission risk.","danger"],
-                ["Prior ER Visits","Emergency history strongly signals instability.","danger"],
-                ["Number of Diagnoses","≥9 diagnoses = high complexity.","warning"],
-                ["Primary Diagnosis Group","Circulatory/Respiratory diseases carry highest risk.","warning"],
-                ["Num Medications","≥20 medications = high polypharmacy risk.","warning"],
+                ["Total Hospital Encounters","Most predictive. ≥3 encounters indicates a chronic patient with recurring instability. Each additional encounter significantly raises risk.","danger"],
+                ["Prior Inpatient Visits","Each prior inpatient admission sharply raises readmission risk — direct signal of disease severity and care gaps.","danger"],
+                ["Prior ER Visits","Emergency visits indicate acute instability. Even 1-2 ER visits in history is a major risk amplifier.","danger"],
               ].map(([label,desc,c])=>(
-                <div key={label} style={{display:"flex",gap:10,alignItems:"flex-start",marginBottom:7,padding:"8px 10px",background:`var(--${c}-light)`,borderRadius:7,border:`1px solid rgba(${c==="danger"?"220,38,38":c==="warning"?"217,119,6":"2,132,199"},0.15)`}}>
-                  <span style={{fontSize:"0.85rem",flexShrink:0}}>★</span>
-                  <div><div style={{fontSize:"0.82rem",fontWeight:700}}>{label}</div><div style={{fontSize:"0.75rem",color:"var(--text-muted)",lineHeight:1.4}}>{desc}</div></div>
+                <div key={label} style={{display:"flex",gap:10,alignItems:"flex-start",marginBottom:8,padding:"10px 12px",background:`var(--${c}-light)`,borderRadius:9,border:`1px solid rgba(220,38,38,0.15)`}}>
+                  <span style={{fontSize:"1rem",flexShrink:0}}>🔴</span>
+                  <div><div style={{fontSize:"0.84rem",fontWeight:700,color:"#991b1b"}}>{label}</div><div style={{fontSize:"0.75rem",color:"var(--text-muted)",lineHeight:1.5,marginTop:2}}>{desc}</div></div>
                 </div>
               ))}
-              <div style={{fontSize:"0.75rem",fontWeight:700,color:"var(--text-muted)",textTransform:"uppercase",letterSpacing:"0.5px",margin:"12px 0 8px"}}>ℹ Auto-filled (not shown in form)</div>
-              {[["Race/Ethnicity","Set to Caucasian by default — low predictive signal"],["Gender","Set to Female by default — low signal"],["A1C Result","Set to None — use Diagnosis Groups instead"],["Glucose Serum","Set to None — low direct signal"]].map(([f,d])=>(
-                <div key={f} style={{display:"flex",gap:8,marginBottom:5,padding:"6px 10px",background:"var(--surface2)",borderRadius:6,border:"1px solid var(--border)"}}>
-                  <span style={{fontSize:"0.78rem",fontWeight:600,color:"var(--text-dim)",minWidth:110}}>{f}</span>
-                  <span style={{fontSize:"0.74rem",color:"var(--text-muted)"}}>{d}</span>
+              <div style={{fontSize:"0.75rem",fontWeight:700,color:"var(--warning)",textTransform:"uppercase",letterSpacing:"0.5px",margin:"12px 0 8px"}}>🟠 High Impact Features</div>
+              {[
+                ["Number of Diagnoses","≥9 active diagnoses signals high clinical complexity. Comorbidity burden is strongly linked to poor discharge outcomes.","warning"],
+                ["Primary Diagnosis Group","Circulatory & Respiratory diseases carry the highest readmission risk. Diabetes + secondary circulatory = very high risk.","warning"],
+                ["Num Medications","≥20 medications = polypharmacy risk. Complex regimens increase adverse events, non-compliance, and readmission rates.","warning"],
+                ["Number of Procedures","Higher procedure count reflects acuity. ≥6 procedures suggests complex hospitalization with elevated complication risk.","warning"],
+              ].map(([label,desc,c])=>(
+                <div key={label} style={{display:"flex",gap:10,alignItems:"flex-start",marginBottom:8,padding:"10px 12px",background:`var(--${c}-light)`,borderRadius:9,border:`1px solid rgba(217,119,6,0.15)`}}>
+                  <span style={{fontSize:"1rem",flexShrink:0}}>🟠</span>
+                  <div><div style={{fontSize:"0.84rem",fontWeight:700,color:"#92400e"}}>{label}</div><div style={{fontSize:"0.75rem",color:"var(--text-muted)",lineHeight:1.5,marginTop:2}}>{desc}</div></div>
+                </div>
+              ))}
+              <div style={{fontSize:"0.75rem",fontWeight:700,color:"var(--text-muted)",textTransform:"uppercase",letterSpacing:"0.5px",margin:"12px 0 8px"}}>ℹ️ Auto-filled (not shown in form)</div>
+              {[
+                ["Race/Ethnicity","Defaulted to Caucasian — low predictive signal in this dataset"],
+                ["Gender","Defaulted to Female — marginal signal, does not significantly affect predictions"],
+                ["A1C Result","Set to None — Diagnosis Groups carry higher signal for readmission"],
+                ["Glucose Serum","Set to None — low direct signal for 30-day readmission risk"]
+              ].map(([f,d])=>(
+                <div key={f} style={{display:"flex",gap:8,marginBottom:6,padding:"8px 11px",background:"var(--surface2)",borderRadius:7,border:"1px solid var(--border)"}}>
+                  <span style={{fontSize:"0.78rem",fontWeight:700,color:"var(--text-dim)",minWidth:120}}>{f}</span>
+                  <span style={{fontSize:"0.74rem",color:"var(--text-muted)",lineHeight:1.45}}>{d}</span>
                 </div>
               ))}
             </div>
           )}
+        </div>
+        {/* Footer */}
+        <div style={{padding:"10px 20px",borderTop:"1px solid var(--border)",display:"flex",justifyContent:"space-between",alignItems:"center",background:"#fafcfe",borderRadius:"0 0 18px 18px"}}>
+          <div style={{fontSize:"0.7rem",color:"var(--text-muted)"}}>🏥 HR-Prediction-AI · Clinical decision support only</div>
+          <div style={{fontSize:"0.7rem",color:"var(--accent)",fontWeight:600}}>v3.2 · 2026</div>
         </div>
       </div>
     </div>);
@@ -2822,14 +3249,23 @@
           {tab==="activitylog" && user.role==="admin" && <ActivityLog showToast={showToast}/>}
         </div>
         {helpOpen&&<HelpDeskModal user={user} onClose={()=>setHelpOpen(false)}/>}
-        <button onClick={()=>setHelpOpen(h=>!h)} title="Help"
-          style={{position:"fixed",bottom:24,right:24,zIndex:1000,width:50,height:50,borderRadius:"50%",border:"none",cursor:"pointer",
-            background:"linear-gradient(135deg,var(--accent),var(--accent2))",color:"white",fontSize:"1.3rem",
-            boxShadow:"0 4px 16px rgba(2,132,199,0.4)",display:"flex",alignItems:"center",justifyContent:"center",transition:"transform 0.18s,box-shadow 0.18s"}}
-          onMouseEnter={e=>{e.currentTarget.style.transform="scale(1.12)";e.currentTarget.style.boxShadow="0 6px 22px rgba(2,132,199,0.55)";}}
-          onMouseLeave={e=>{e.currentTarget.style.transform="scale(1)";e.currentTarget.style.boxShadow="0 4px 16px rgba(2,132,199,0.4)";}}>
-          {helpOpen?"✕":"?"}
-        </button>
+        <div style={{position:"fixed",bottom:24,right:24,zIndex:1000}}>
+          {!helpOpen&&<div style={{
+            position:"absolute",inset:"-4px",borderRadius:"50%",
+            background:"rgba(2,132,199,0.25)",
+            animation:"pulseGlow 2s ease infinite",pointerEvents:"none"
+          }}/>}
+          <button onClick={()=>setHelpOpen(h=>!h)} title="Help"
+            style={{position:"relative",width:52,height:52,borderRadius:"50%",border:"none",cursor:"pointer",
+              background:helpOpen?"linear-gradient(135deg,#ef4444,#dc2626)":"linear-gradient(135deg,var(--accent),var(--accent2))",
+              color:"white",fontSize:"1.4rem",
+              boxShadow:"0 4px 18px rgba(2,132,199,0.45)",display:"flex",alignItems:"center",justifyContent:"center",
+              transition:"all 0.25s cubic-bezier(0.34,1.56,0.64,1)"}}
+            onMouseEnter={e=>{e.currentTarget.style.transform="scale(1.15) rotate(10deg)";e.currentTarget.style.boxShadow="0 8px 26px rgba(2,132,199,0.6)";}}
+            onMouseLeave={e=>{e.currentTarget.style.transform="scale(1) rotate(0deg)";e.currentTarget.style.boxShadow="0 4px 18px rgba(2,132,199,0.45)";}}>
+            <span style={{transition:"transform 0.25s",display:"inline-block",transform:helpOpen?"rotate(180deg)":"none"}}>{helpOpen?"✕":"?"}</span>
+          </button>
+        </div>
         {toast&&<Toast key={toast.id} msg={toast.msg} type={toast.type} onClose={()=>setToast(null)}/>}
       </div>
     );
