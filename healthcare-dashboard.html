@@ -8,6 +8,7 @@
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -1987,6 +1988,130 @@
       ?["Schedule follow-up within 7 days of discharge","Review and reconcile all medications","Coordinate with case management / social services","Arrange home health or extended monitoring","Consider patient education on diabetes self-management"]
       :["Standard 30-day post-discharge follow-up","Routine medication review at next visit","Provide patient education materials","Ensure patient understands discharge instructions"];
 
+    // Confidence zone detection
+    const prob = result?.probability || 0;
+    const isBorderline = prob >= 45 && prob <= 60;
+
+    // Discharge checklist items (shown for High Risk)
+    const DISCHARGE_CHECKLIST = [
+      "Patient educated on warning signs requiring immediate return",
+      "Follow-up appointment scheduled within 7 days",
+      "Medication reconciliation completed by pharmacist",
+      "Discharge summary sent to primary care physician",
+      "Patient has reliable transport and support at home",
+      "Home health or nursing visit arranged if needed",
+      "Patient contact number verified in records",
+      "Social work / case management consulted",
+    ];
+    const [checkedItems, setCheckedItems] = React.useState({});
+    const toggleCheck = (i) => setCheckedItems(p=>({...p,[i]:!p[i]}));
+    const checkedCount = Object.values(checkedItems).filter(Boolean).length;
+
+    // PDF export using jsPDF
+    const exportPDF = () => {
+      if(!result || !window.jspdf) { showToast("PDF library not loaded yet","error"); return; }
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({unit:"mm",format:"a4"});
+      const W = doc.internal.pageSize.getWidth();
+      let y = 18;
+
+      // Header
+      doc.setFillColor(2,132,199);
+      doc.rect(0,0,W,14,"F");
+      doc.setTextColor(255,255,255);
+      doc.setFontSize(11); doc.setFont("helvetica","bold");
+      doc.text("Healthcare Readmission Prediction — Clinical Report",W/2,9,{align:"center"});
+
+      y=22;
+      doc.setTextColor(30,41,59);
+      doc.setFontSize(8.5); doc.setFont("helvetica","normal");
+      doc.text(`Generated: ${new Date().toLocaleString()}   |   Model: ${result.model_version||"v3.2"}   |   Patient ID: ${result.patient_id||"—"}`,W/2,y,{align:"center"});
+
+      // Disclaimer
+      y+=6;
+      doc.setFillColor(254,243,199); doc.setDrawColor(217,119,6); doc.setLineWidth(0.4);
+      doc.roundedRect(10,y,W-20,9,2,2,"FD");
+      doc.setFontSize(8); doc.setFont("helvetica","bold"); doc.setTextColor(146,64,14);
+      doc.text("DECISION SUPPORT ONLY — This AI report does NOT replace clinical judgement. Confirm all findings clinically.",W/2,y+5.5,{align:"center"});
+
+      // Patient info
+      y+=15;
+      doc.setFontSize(10); doc.setFont("helvetica","bold"); doc.setTextColor(2,132,199);
+      doc.text("PATIENT INFORMATION",12,y);
+      doc.setDrawColor(2,132,199); doc.setLineWidth(0.4);
+      doc.line(12,y+2,W-12,y+2);
+      y+=8;
+      doc.setFont("helvetica","normal"); doc.setTextColor(30,41,59); doc.setFontSize(9);
+      const infoRows = [
+        ["Patient Name", vals.patient_name||"—", "Age", `${vals.age} yrs`],
+        ["Days in Hospital", String(vals.time_in_hospital), "Num Diagnoses", String(vals.number_diagnoses)],
+        ["Prior Inpatient", String(vals.number_inpatient), "Prior ER Visits", String(vals.number_emergency)],
+        ["Medications", String(vals.num_medications), "Insulin", vals.insulin],
+        ["Specialty", vals.specialty||"—", "Encounter Count", String(vals.patient_encounter_count)],
+      ];
+      infoRows.forEach(([k1,v1,k2,v2])=>{
+        doc.setFont("helvetica","bold"); doc.text(k1+":",12,y);
+        doc.setFont("helvetica","normal"); doc.text(v1,50,y);
+        doc.setFont("helvetica","bold"); doc.text(k2+":",W/2+2,y);
+        doc.setFont("helvetica","normal"); doc.text(v2,W/2+38,y);
+        y+=6;
+      });
+      y+=4;
+
+      // Result
+      doc.setFontSize(10); doc.setFont("helvetica","bold"); doc.setTextColor(2,132,199);
+      doc.text("PREDICTION RESULT",12,y);
+      doc.line(12,y+2,W-12,y+2); y+=8;
+      const isH = result.prediction==="High Risk";
+      doc.setFillColor(isH?254:209, isH?226:250, isH?226:229);
+      doc.setDrawColor(isH?220:5, isH?38:150, isH?38:105); doc.setLineWidth(0.6);
+      doc.roundedRect(12,y-4,W-24,18,3,3,"FD");
+      doc.setFontSize(15); doc.setFont("helvetica","bold");
+      doc.setTextColor(isH?153:6, isH?27:95, isH?27:70);
+      doc.text(`${isH?"⚠":"✓"} ${result.prediction}`,W/2,y+5,{align:"center"});
+      doc.setFontSize(10);
+      doc.text(`Readmission Probability: ${result.probability}%`,W/2,y+12,{align:"center"});
+      y+=24;
+
+      // Borderline warning
+      if(isBorderline){
+        doc.setFillColor(239,246,255); doc.setDrawColor(2,132,199); doc.setLineWidth(0.3);
+        doc.roundedRect(12,y,W-24,9,2,2,"FD");
+        doc.setFontSize(8); doc.setFont("helvetica","bold"); doc.setTextColor(12,74,110);
+        doc.text(`⚡ Borderline confidence (${result.probability}%) — independent clinical review strongly recommended.`,W/2,y+5.5,{align:"center"});
+        y+=14;
+      }
+
+      // Risk flags
+      if(riskFlags.length>0){
+        doc.setFontSize(10); doc.setFont("helvetica","bold"); doc.setTextColor(220,38,38);
+        doc.text("RISK FACTORS IDENTIFIED",12,y);
+        doc.setDrawColor(220,38,38); doc.setLineWidth(0.4);
+        doc.line(12,y+2,W-12,y+2); y+=8;
+        doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(153,27,27);
+        riskFlags.forEach(f=>{ doc.text(`• ${f}`,16,y); y+=5.5; });
+        y+=3;
+      }
+
+      // Recommendations
+      doc.setFontSize(10); doc.setFont("helvetica","bold"); doc.setTextColor(2,132,199);
+      doc.text("CLINICAL RECOMMENDATIONS",12,y);
+      doc.setDrawColor(2,132,199); doc.setLineWidth(0.4);
+      doc.line(12,y+2,W-12,y+2); y+=8;
+      doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(30,41,59);
+      recommendations.forEach(r=>{ doc.text(`→ ${r}`,16,y); y+=5.5; });
+
+      // Footer
+      const fY = doc.internal.pageSize.getHeight()-14;
+      doc.setFillColor(240,244,248); doc.rect(0,fY-3,W,17,"F");
+      doc.setFontSize(7.5); doc.setFont("helvetica","italic"); doc.setTextColor(100,116,139);
+      doc.text("This report is an AI-generated decision support tool and must not be used as the sole basis for clinical decisions. Always apply clinical judgement.",W/2,fY+2,{align:"center"});
+      doc.text(`HR-Prediction-AI ${result.model_version||"v3.2"} · Confidential · ${new Date().toLocaleDateString()}`,W/2,fY+8,{align:"center"});
+
+      doc.save(`readmission_${(vals.patient_name||"patient").replace(/\s+/g,"_")}_${result.patient_id||"report"}.pdf`);
+      showToast("PDF report downloaded!","success");
+    };
+
     const selStyle = {width:"100%",padding:"7px 9px",background:"var(--surface2)",border:"1.5px solid var(--border)",borderRadius:8,color:"var(--text)",fontFamily:"inherit",fontSize:"0.83rem",outline:"none",cursor:"pointer"};
     const labelStyle = {fontSize:"0.72rem",fontWeight:700,color:"var(--text-muted)",textTransform:"uppercase",letterSpacing:"0.4px",marginBottom:5};
 
@@ -2133,16 +2258,70 @@
                     </div>
                   </div>
                 )}
+                {/* Decision support disclaimer — always visible on result */}
+                <div style={{background:"#fffbeb",border:"1px solid rgba(217,119,6,0.35)",borderRadius:8,padding:"8px 12px",marginBottom:10,fontSize:"0.74rem",color:"#92400e",textAlign:"center",fontWeight:500}}>
+                  ⚠️ <strong>Decision Support Only</strong> — This AI prediction aids, but does NOT replace, clinical judgement. Always confirm findings clinically.
+                </div>
+
+                {/* Borderline / low-confidence warning */}
+                {isBorderline&&(
+                  <div style={{background:"#eff6ff",border:"1px solid rgba(2,132,199,0.35)",borderRadius:8,padding:"8px 12px",marginBottom:10,fontSize:"0.78rem",color:"#1e40af",fontWeight:600,textAlign:"center"}}>
+                    ⚡ <strong>Borderline Confidence ({result.probability}%)</strong> — Result is in the 45–60% zone. Independent clinical review strongly recommended before acting on this prediction.
+                  </div>
+                )}
+
                 <div className="recommend-box">
                   <h4>Clinical Recommendations</h4>
                   <ul>{recommendations.map((r,i)=><li key={i}>{r}</li>)}</ul>
                 </div>
                 {riskFlags.length>0&&(
                   <div className="recommend-box" style={{marginTop:10,borderColor:"rgba(220,38,38,0.25)",background:"var(--danger-light)"}}>
-                    <h4 style={{color:"var(--danger)"}}>⚠ Risk Factors</h4>
+                    <h4 style={{color:"var(--danger)"}}>⚠ Risk Factors Detected</h4>
                     <ul>{riskFlags.map((f,i)=><li key={i} style={{color:"#991b1b"}}>{f}</li>)}</ul>
                   </div>
                 )}
+
+                {/* Discharge checklist — High Risk only */}
+                {isHigh&&(
+                  <div style={{marginTop:12,background:"var(--surface2)",border:"1.5px solid rgba(220,38,38,0.2)",borderRadius:10,padding:"12px 14px"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                      <h4 style={{fontSize:"0.76rem",fontWeight:700,color:"var(--danger)",textTransform:"uppercase",letterSpacing:"0.5px",margin:0}}>📋 Discharge Safety Checklist</h4>
+                      <span style={{fontSize:"0.7rem",fontWeight:700,color:checkedCount===DISCHARGE_CHECKLIST.length?"var(--success)":"var(--text-muted)"}}>
+                        {checkedCount}/{DISCHARGE_CHECKLIST.length} complete
+                      </span>
+                    </div>
+                    {DISCHARGE_CHECKLIST.map((item,i)=>(
+                      <div key={i} onClick={()=>toggleCheck(i)}
+                        style={{display:"flex",alignItems:"flex-start",gap:8,padding:"6px 4px",cursor:"pointer",borderRadius:6,transition:"background 0.14s",marginBottom:2,
+                          background:checkedItems[i]?"rgba(5,150,105,0.07)":"transparent"}}
+                        onMouseEnter={e=>e.currentTarget.style.background=checkedItems[i]?"rgba(5,150,105,0.1)":"rgba(0,0,0,0.03)"}
+                        onMouseLeave={e=>e.currentTarget.style.background=checkedItems[i]?"rgba(5,150,105,0.07)":"transparent"}>
+                        <div style={{width:16,height:16,borderRadius:4,border:`2px solid ${checkedItems[i]?"var(--success)":"rgba(0,0,0,0.2)"}`,
+                          background:checkedItems[i]?"var(--success)":"white",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1,transition:"all 0.15s"}}>
+                          {checkedItems[i]&&<span style={{color:"white",fontSize:"0.65rem",fontWeight:800}}>✓</span>}
+                        </div>
+                        <span style={{fontSize:"0.78rem",color:checkedItems[i]?"var(--success)":"var(--text-dim)",textDecoration:checkedItems[i]?"line-through":"none",transition:"all 0.15s",lineHeight:1.4}}>{item}</span>
+                      </div>
+                    ))}
+                    {checkedCount===DISCHARGE_CHECKLIST.length&&(
+                      <div style={{marginTop:8,textAlign:"center",color:"var(--success)",fontSize:"0.78rem",fontWeight:700}}>
+                        ✅ All discharge steps confirmed
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* PDF Export button */}
+                <button onClick={exportPDF}
+                  style={{marginTop:14,width:"100%",padding:"10px",background:"linear-gradient(135deg,#0284c7,#0d9488)",
+                    color:"white",border:"none",borderRadius:8,fontFamily:"inherit",fontSize:"0.88rem",
+                    fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:7,
+                    boxShadow:"0 3px 12px rgba(2,132,199,0.3)",transition:"all 0.18s"}}
+                  onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-1px)";e.currentTarget.style.boxShadow="0 5px 18px rgba(2,132,199,0.4)";}}
+                  onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="0 3px 12px rgba(2,132,199,0.3)";}}>
+                  📄 Export PDF Report
+                </button>
+
               </>
             ):(
               <div style={{color:"var(--text-muted)",fontSize:"0.88rem",marginTop:10}}>
