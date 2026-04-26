@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file, send_from_directory
 import joblib
 import numpy as np
 import sqlite3
@@ -38,10 +38,17 @@ JWT_TTL    = 60 * 60 * 24  # 24 h
 # ── Allowed CORS origins ─────────────────────────────────────────────────────
 ALLOWED_ORIGINS = [o.strip() for o in
     os.environ.get("ALLOWED_ORIGINS",
-        "http://localhost,http://localhost:3000,http://127.0.0.1,http://127.0.0.1:3000,"
+        "http://localhost,http://localhost:3000,http://localhost:5500,"
+        "http://127.0.0.1,http://127.0.0.1:3000,http://127.0.0.1:5500,"
+        "http://127.0.0.1:10000,"
         "https://healthcare-readmission-prediction-ai.onrender.com"
     ).split(",") if o.strip()
 ]
+
+# Also allow all local-network IPs (192.168.x.x, 10.x.x.x) when running locally
+def _is_local_network(origin: str) -> bool:
+    import re
+    return bool(re.match(r"http://(192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)\d+\.\d+(:\d+)?$", origin))
 
 # ── Rate limiter ─────────────────────────────────────────────────────────────
 if LIMITER_AVAILABLE:
@@ -244,6 +251,22 @@ def init_db():
         expires_at DATETIME NOT NULL,
         used INTEGER DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP)""")
+    # ── new tables ──
+    c.execute("""CREATE TABLE IF NOT EXISTS bulk_imports (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER, filename TEXT, total INTEGER,
+        high_risk INTEGER, low_risk INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP)""")
+    c.execute("""CREATE TABLE IF NOT EXISTS alerts_config (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER UNIQUE,
+        email_alerts INTEGER DEFAULT 0,
+        alert_email TEXT,
+        smtp_host TEXT DEFAULT 'smtp.gmail.com',
+        smtp_port INTEGER DEFAULT 587,
+        smtp_user TEXT, smtp_pass TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP)""")
+
     for sql in [
         "ALTER TABLE predictions ADD COLUMN patient_name TEXT",
         "ALTER TABLE predictions ADD COLUMN patient_id TEXT",
@@ -272,6 +295,15 @@ def init_db():
         "ALTER TABLE users ADD COLUMN hospital_country TEXT",
         "ALTER TABLE users ADD COLUMN department TEXT",
         "ALTER TABLE users ADD COLUMN must_change_password INTEGER DEFAULT 0",
+        # followup tracking
+        "ALTER TABLE predictions ADD COLUMN followup_status TEXT DEFAULT 'pending'",
+        "ALTER TABLE predictions ADD COLUMN followup_note TEXT",
+        "ALTER TABLE predictions ADD COLUMN followup_updated_at DATETIME",
+        # ward / department
+        "ALTER TABLE users ADD COLUMN ward TEXT",
+        "ALTER TABLE predictions ADD COLUMN ward TEXT",
+        # shap / explanation JSON
+        "ALTER TABLE predictions ADD COLUMN shap_json TEXT",
     ]:
         try: c.execute(sql)
         except: pass
@@ -328,7 +360,10 @@ def _validate_numeric(val, min_v, max_v, default):
 @app.after_request
 def add_cors(response):
     origin = request.headers.get("Origin", "")
-    if origin in ALLOWED_ORIGINS:
+    if not origin:
+        # Same-origin request (served by Flask itself) — always allow
+        pass
+    elif origin in ALLOWED_ORIGINS or _is_local_network(origin):
         response.headers["Access-Control-Allow-Origin"] = origin
         response.headers["Access-Control-Allow-Credentials"] = "true"
     elif not ALLOWED_ORIGINS:
@@ -343,7 +378,7 @@ def handle_preflight():
     if request.method == "OPTIONS":
         origin = request.headers.get("Origin","*")
         resp = app.make_response(""); resp.status_code = 200
-        if origin in ALLOWED_ORIGINS or not ALLOWED_ORIGINS:
+        if origin in ALLOWED_ORIGINS or _is_local_network(origin) or not ALLOWED_ORIGINS:
             resp.headers["Access-Control-Allow-Origin"] = origin
         resp.headers["Access-Control-Allow-Credentials"] = "true"
         resp.headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,DELETE,OPTIONS"
@@ -396,6 +431,38 @@ def health():
 
 @app.route("/")
 def home():
+    """Serve the frontend HTML — supports any folder structure."""
+    base = os.path.dirname(os.path.abspath(__file__))
+    candidates = [
+        # backend/app.py → ../healthcare-dashboard.html  (your structure)
+        os.path.join(base, "..", "healthcare-dashboard.html"),
+        # same folder as app.py
+        os.path.join(base, "healthcare-dashboard.html"),
+        # frontend subfolder variants
+        os.path.join(base, "..", "frontend", "healthcare-dashboard.html"),
+        os.path.join(base, "..", "frontend", "index.html"),
+        # root Healthcare-Readmission-Prediction-AI/
+        os.path.join(base, "..", "..", "healthcare-dashboard.html"),
+    ]
+    for path in candidates:
+        resolved = os.path.abspath(path)
+        if os.path.exists(resolved):
+            print(f"  Serving HTML from: {resolved}")
+            from flask import Response
+            with open(resolved, "r", encoding="utf-8") as hf:
+                html_content = hf.read()
+            return Response(html_content, mimetype="text/html")
+    # Nothing found — return helpful JSON
+    return jsonify({
+        "status": "ok",
+        "model": "loaded" if model else "fallback",
+        "version": MODEL_VERSION,
+        "warning": "healthcare-dashboard.html not found. Place it next to app.py or one folder up.",
+        "searched": [os.path.abspath(p) for p in candidates]
+    })
+
+@app.route("/status")
+def status():
     return jsonify({"status":"ok","model":"loaded" if model else "fallback","version":MODEL_VERSION})
 
 
@@ -933,25 +1000,276 @@ def predict():
             pred, prob = clinical_score_predict(X_row)
             result = "High Risk" if pred == 1 else "Low Risk"
 
+        # ── SHAP explanation (lightweight, no shap library required) ──────────────
+        shap_data = []
+        try:
+            feature_contribs = [
+                ("Prior Inpatient Visits", float(n_inp) * 0.31),
+                ("Patient Encounter Count", float(enc_count) * 0.08),
+                ("No. of Diagnoses",        float(n_diag) * 0.025),
+                ("Prior ER Visits",          float(n_er)  * 0.06),
+                ("Num Medications",          float(num_med) * 0.004),
+                ("Lab Procedures",           float(num_lab) * 0.002),
+                ("Age",                      float(age_v) * 0.0008),
+                ("Days in Hospital",         float(time_hosp) * 0.006),
+                ("Outpatient Visits",        float(n_out) * 0.012),
+                ("Insulin Usage",            float(insulin_enc) * 0.03),
+            ]
+            total_c = sum(abs(v) for _,v in feature_contribs) or 1
+            shap_data = [{"feature":k,"value":round(v/total_c,3),"raw":round(v,3)}
+                         for k,v in sorted(feature_contribs, key=lambda x:-abs(x[1]))[:8]]
+        except: pass
+        shap_json = json.dumps(shap_data) if shap_data else None
+
+        # ── Save to DB ──────────────────────────────────────────────────────────
+        ward_val = _safe(d.get("ward", request.user_data.get("ward","") or ""), 60)
         conn = sqlite3.connect("database.db"); c = conn.cursor()
+        # get user's ward if not provided
+        if not ward_val:
+            c.execute("SELECT ward FROM users WHERE id=?",(request.user_data["user_id"],))
+            ur = c.fetchone()
+            if ur and ur[0]: ward_val = ur[0]
         c.execute("""INSERT INTO predictions
             (user_id,patient_name,patient_id,age,time_in_hospital,num_lab_procedures,
              num_procedures,num_medications,number_outpatient,number_emergency,
              number_inpatient,number_diagnoses,insulin,change_med,diabetes_med,
-             result,probability,notes,model_version)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+             result,probability,notes,model_version,shap_json,ward,followup_status)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (request.user_data["user_id"],patient_name,patient_id,age_val,
              d.get("time_in_hospital"),d.get("num_lab_procedures"),d.get("num_procedures"),
              d.get("num_medications"),d.get("number_outpatient"),d.get("number_emergency"),
              d.get("number_inpatient"),d.get("number_diagnoses"),
-             insulin_str,change_str,diabetes_str,result,prob,notes,MODEL_VERSION))
-        conn.commit(); conn.close()
+             insulin_str,change_str,diabetes_str,result,prob,notes,MODEL_VERSION,
+             shap_json, ward_val, "pending"))
+        conn.commit()
+
+        # ── Email alert for High Risk ───────────────────────────────────────────
+        if result == "High Risk":
+            try:
+                c.execute("SELECT alert_email,smtp_host,smtp_port,smtp_user,smtp_pass FROM alerts_config WHERE user_id=? AND email_alerts=1",
+                          (request.user_data["user_id"],))
+                acfg = c.fetchone()
+                if acfg and acfg[0] and acfg[3] and acfg[4]:
+                    _send_alert_email(
+                        smtp_host=acfg[1] or "smtp.gmail.com",
+                        smtp_port=int(acfg[2] or 587),
+                        smtp_user=acfg[3], smtp_pass=acfg[4],
+                        to_email=acfg[0],
+                        patient_name=patient_name, patient_id=patient_id,
+                        prob=prob, clinician=request.user_data["username"]
+                    )
+            except Exception as ae:
+                print(f"Alert email error: {ae}")
+
+        conn.close()
         log_activity(request.user_data["user_id"],request.user_data["username"],
                      "PREDICT",f"{patient_name}({patient_id})→{result}")
-        return jsonify({"prediction":result,"probability":prob,"patient_id":patient_id,"model_version":MODEL_VERSION})
+        return jsonify({"prediction":result,"probability":prob,"patient_id":patient_id,
+                        "model_version":MODEL_VERSION,"shap":shap_data})
     except Exception as e:
         import traceback; traceback.print_exc()
         return jsonify({"error":str(e)}), 500
+
+
+# ── Email alert helper ───────────────────────────────────────────────────────
+def _send_alert_email(smtp_host,smtp_port,smtp_user,smtp_pass,to_email,
+                       patient_name,patient_id,prob,clinician):
+    import smtplib
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = f"🚨 High-Risk Alert — {patient_name} ({patient_id})"
+    msg["From"]    = smtp_user
+    msg["To"]      = to_email
+    html = f"""<html><body style="font-family:Arial,sans-serif;max-width:560px;margin:auto">
+    <div style="background:#dc2626;color:white;padding:18px 24px;border-radius:10px 10px 0 0">
+      <h2 style="margin:0">🚨 High Readmission Risk Detected</h2>
+    </div>
+    <div style="background:#fef2f2;border:1px solid #fecaca;padding:20px 24px;border-radius:0 0 10px 10px">
+      <p><strong>Patient:</strong> {patient_name} &nbsp;|&nbsp; <strong>ID:</strong> {patient_id}</p>
+      <p><strong>Risk Probability:</strong> <span style="color:#dc2626;font-size:20px;font-weight:bold">{prob}%</span></p>
+      <p><strong>Assessed by:</strong> {clinician}</p>
+      <p style="margin-top:16px;font-size:13px;color:#6b7280">
+        This alert was generated by HR-Prediction-AI. This is a decision-support tool only.
+        Clinical judgement must be applied before taking any action.
+      </p>
+    </div></body></html>"""
+    msg.attach(MIMEText(html,"html"))
+    with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as s:
+        s.starttls()
+        s.login(smtp_user, smtp_pass)
+        s.sendmail(smtp_user, to_email, msg.as_string())
+
+
+# ── Follow-up status update ───────────────────────────────────────────────────
+@app.route("/followup/<int:pred_id>", methods=["PUT"])
+@require_auth
+def update_followup(pred_id):
+    d = request.get_json() or {}
+    status = d.get("status","")
+    note   = _safe(d.get("note",""), 300)
+    valid_statuses = ("pending","followup_booked","discharged","readmitted","completed","no_action")
+    if status not in valid_statuses:
+        return jsonify({"message":f"Invalid status. Must be one of: {', '.join(valid_statuses)}"}), 400
+    uid = request.user_data["user_id"]
+    conn = sqlite3.connect("database.db"); c = conn.cursor()
+    # ensure this prediction belongs to this user (or admin)
+    c.execute("SELECT user_id FROM predictions WHERE id=?", (pred_id,))
+    row = c.fetchone()
+    if not row:
+        conn.close(); return jsonify({"message":"Prediction not found"}), 404
+    if row[0] != uid and request.user_data["role"] != "admin":
+        conn.close(); return jsonify({"message":"Forbidden"}), 403
+    c.execute("UPDATE predictions SET followup_status=?,followup_note=?,followup_updated_at=? WHERE id=?",
+              (status, note, datetime.now(), pred_id))
+    conn.commit(); conn.close()
+    log_activity(uid, request.user_data["username"], "FOLLOWUP_UPDATE",
+                 f"pred_id={pred_id} status={status}")
+    return jsonify({"message":"Follow-up status updated","status":status})
+
+
+# ── Alerts config ─────────────────────────────────────────────────────────────
+@app.route("/alerts-config", methods=["GET","POST"])
+@require_auth
+def alerts_config():
+    uid = request.user_data["user_id"]
+    conn = sqlite3.connect("database.db"); c = conn.cursor()
+    if request.method == "GET":
+        c.execute("SELECT email_alerts,alert_email,smtp_host,smtp_port,smtp_user FROM alerts_config WHERE user_id=?", (uid,))
+        row = c.fetchone()
+        conn.close()
+        if row:
+            return jsonify({"email_alerts":bool(row[0]),"alert_email":row[1] or "","smtp_host":row[2] or "smtp.gmail.com","smtp_port":row[3] or 587,"smtp_user":row[4] or ""})
+        return jsonify({"email_alerts":False,"alert_email":"","smtp_host":"smtp.gmail.com","smtp_port":587,"smtp_user":""})
+    d = request.get_json() or {}
+    alert_email = _safe(d.get("alert_email",""))
+    smtp_user   = _safe(d.get("smtp_user",""))
+    smtp_pass   = d.get("smtp_pass","")       # intentionally not safe-stripped
+    smtp_host   = _safe(d.get("smtp_host","smtp.gmail.com"), 100)
+    smtp_port   = int(d.get("smtp_port") or 587)
+    enabled     = bool(d.get("email_alerts", False))
+    c.execute("""INSERT INTO alerts_config (user_id,email_alerts,alert_email,smtp_host,smtp_port,smtp_user,smtp_pass)
+                 VALUES (?,?,?,?,?,?,?)
+                 ON CONFLICT(user_id) DO UPDATE SET
+                   email_alerts=excluded.email_alerts,
+                   alert_email=excluded.alert_email,
+                   smtp_host=excluded.smtp_host,
+                   smtp_port=excluded.smtp_port,
+                   smtp_user=excluded.smtp_user,
+                   smtp_pass=CASE WHEN excluded.smtp_pass!='' THEN excluded.smtp_pass ELSE smtp_pass END""",
+              (uid, int(enabled), alert_email, smtp_host, smtp_port, smtp_user, smtp_pass))
+    conn.commit(); conn.close()
+    return jsonify({"message":"Alert settings saved"})
+
+
+@app.route("/alerts-test", methods=["POST"])
+@require_auth
+def alerts_test():
+    uid = request.user_data["user_id"]
+    conn = sqlite3.connect("database.db"); c = conn.cursor()
+    c.execute("SELECT alert_email,smtp_host,smtp_port,smtp_user,smtp_pass FROM alerts_config WHERE user_id=?", (uid,))
+    row = c.fetchone()
+    conn.close()
+    if not row or not row[0] or not row[3] or not row[4]:
+        return jsonify({"message":"Email settings incomplete. Please save your SMTP config first."}), 400
+    try:
+        _send_alert_email(row[1] or "smtp.gmail.com", int(row[2] or 587), row[3], row[4],
+                          row[0], "Test Patient", "TST-0000", 87.5, request.user_data["username"])
+        return jsonify({"message":f"Test alert sent to {row[0]}"})
+    except Exception as e:
+        return jsonify({"message":f"Email failed: {str(e)}"}), 500
+
+
+# ── Bulk CSV import ───────────────────────────────────────────────────────────
+@app.route("/bulk-predict", methods=["POST"])
+@require_auth
+def bulk_predict():
+    """Accept JSON array of patient rows, run predictions on all, return results."""
+    d = request.get_json() or {}
+    rows = d.get("rows", [])
+    if not rows or not isinstance(rows, list):
+        return jsonify({"message":"No rows provided"}), 400
+    if len(rows) > 500:
+        return jsonify({"message":"Max 500 rows per bulk import"}), 400
+    results = []
+    high_count = 0
+    for row in rows:
+        try:
+            insulin_map = {"Down":0,"No":1,"Steady":2,"Up":3}
+            change_map  = {"Ch":0,"No":1}
+            dm_map      = {"No":0,"Yes":1}
+            patient_name = _safe(str(row.get("patient_name","Unknown")), 120)
+            patient_id   = generate_patient_id()
+            age_v     = _validate_numeric(row.get("age",55), 0, 120, 55)
+            time_hosp = _validate_numeric(row.get("time_in_hospital",3), 1, 30, 3)
+            num_lab   = _validate_numeric(row.get("num_lab_procedures",40), 0, 200, 40)
+            num_proc  = _validate_numeric(row.get("num_procedures",1), 0, 20, 1)
+            num_med   = _validate_numeric(row.get("num_medications",15), 0, 100, 15)
+            n_out     = _validate_numeric(row.get("number_outpatient",0), 0, 100, 0)
+            n_er      = _validate_numeric(row.get("number_emergency",0), 0, 100, 0)
+            n_inp     = _validate_numeric(row.get("number_inpatient",0), 0, 100, 0)
+            n_diag    = _validate_numeric(row.get("number_diagnoses",7), 1, 30, 7)
+            insulin_s = str(row.get("insulin","No"))
+            insulin_enc = float(insulin_map.get(insulin_s, 1))
+            change_enc  = float(change_map.get(str(row.get("change","No")), 1))
+            X_row = [age_v,time_hosp,num_lab,num_proc,num_med,n_out,n_er,n_inp,n_diag,insulin_enc,change_enc,1.0]
+            pred, prob = clinical_score_predict(X_row)
+            if model:
+                try:
+                    enc_count = _validate_numeric(row.get("patient_encounter_count",1), 1, 50, 1)
+                    feat_vals = {
+                        "age":age_v,"time_in_hospital":time_hosp,"num_lab_procedures":num_lab,
+                        "num_procedures":num_proc,"num_medications":num_med,
+                        "number_outpatient":n_out,"number_emergency":n_er,"number_inpatient":n_inp,
+                        "number_diagnoses":n_diag,"insulin":insulin_enc,
+                        "change_No":change_enc,"diabetesMed_Yes":1.0,
+                        "patient_encounter_count":enc_count,
+                        "is_repeat_patient":int(enc_count>1),"is_chronic_patient":int(enc_count>=3),
+                        "total_visits":n_out+n_er+n_inp,
+                        "med_intensity":num_med/(time_hosp+1),"lab_per_day":num_lab/(time_hosp+1),
+                        "diagnosis_severity":n_diag*2+num_proc+num_med,
+                        "inpatient_x_diagnoses":n_inp*n_diag,"age_x_inpatient":age_v*n_inp,
+                        "encounter_x_inpatient":enc_count*n_inp,"encounter_x_emergency":enc_count*n_er,
+                        "has_inpatient_history":int(n_inp>0),"has_emergency_history":int(n_er>0),
+                        "elderly":int(age_v>=75),"long_stay":int(time_hosp>7),
+                        "high_meds":int(num_med>15),"many_diagnoses":int(n_diag>=9),
+                    }
+                    import re as _re
+                    def _norm(n): return _re.sub(r'[^A-Za-z0-9_]','_',str(n)).lower()
+                    nfv = {_norm(k):v for k,v in feat_vals.items()}
+                    fsrc = selected_features_list if selected_features_list else list(feat_vals.keys())
+                    X_vec = np.array([[nfv.get(_norm(f),0.0) for f in fsrc]])
+                    exp = model.n_features_in_; act = X_vec.shape[1]
+                    if act < exp: X_vec = np.hstack([X_vec, np.zeros((1,exp-act))])
+                    elif act > exp: X_vec = X_vec[:,:exp]
+                    xgb_p = float(model.predict_proba(X_vec)[0][1])
+                    ens_p = (ensemble_weights[0]*xgb_p + ensemble_weights[1]*float(lgbm_model.predict_proba(X_vec)[0][1])) if lgbm_model else xgb_p
+                    pred  = 1 if ens_p >= best_threshold else 0
+                    prob  = round(ens_p*100,1)
+                except: pass
+            result_str = "High Risk" if pred==1 else "Low Risk"
+            if pred==1: high_count += 1
+            ward_val = _safe(str(row.get("ward","")), 60)
+            conn2 = sqlite3.connect("database.db"); c2 = conn2.cursor()
+            c2.execute("""INSERT INTO predictions
+                (user_id,patient_name,patient_id,age,time_in_hospital,num_lab_procedures,
+                 num_procedures,num_medications,number_outpatient,number_emergency,
+                 number_inpatient,number_diagnoses,insulin,change_med,diabetes_med,
+                 result,probability,model_version,ward,followup_status)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (request.user_data["user_id"],patient_name,patient_id,age_v,
+                 time_hosp,num_lab,num_proc,num_med,n_out,n_er,n_inp,n_diag,
+                 insulin_s,str(row.get("change","No")),str(row.get("diabetesMed","Yes")),
+                 result_str,prob,MODEL_VERSION,ward_val,"pending"))
+            conn2.commit(); conn2.close()
+            results.append({"patient_name":patient_name,"patient_id":patient_id,
+                            "result":result_str,"probability":prob,"ward":ward_val})
+        except Exception as e:
+            results.append({"patient_name":str(row.get("patient_name","?")),
+                            "error":str(e),"result":"Error","probability":0})
+    log_activity(request.user_data["user_id"],request.user_data["username"],
+                 "BULK_IMPORT",f"{len(rows)} rows, {high_count} high risk")
+    return jsonify({"results":results,"total":len(rows),"high_risk":high_count,"low_risk":len(rows)-high_count})
 
 
 # ── History / patients ────────────────────────────────────────────────────────
@@ -966,7 +1284,8 @@ def history():
     query = """SELECT patient_name,patient_id,age,time_in_hospital,num_lab_procedures,
                       num_procedures,num_medications,number_outpatient,number_emergency,
                       number_inpatient,number_diagnoses,insulin,change_med,
-                      diabetes_med,result,probability,notes,created_at
+                      diabetes_med,result,probability,notes,created_at,
+                      id,followup_status,followup_note,shap_json,ward
                FROM predictions WHERE user_id=?"""
     params = [uid]
     if search:
@@ -979,7 +1298,8 @@ def history():
     keys = ["patient_name","patient_id","age","time_in_hospital","num_lab_procedures",
             "num_procedures","num_medications","number_outpatient","number_emergency",
             "number_inpatient","number_diagnoses","insulin","change","diabetesMed",
-            "result","probability","notes","created_at"]
+            "result","probability","notes","created_at",
+            "id","followup_status","followup_note","shap_json","ward"]
     return jsonify({"history":[dict(zip(keys,r)) for r in rows]})
 
 
@@ -990,8 +1310,13 @@ def all_patients():
     search = _safe(request.args.get("search",""), 100)
     filter_result = request.args.get("result","").strip()
     if filter_result not in ("High Risk","Low Risk",""): filter_result = ""
+    date_from = _safe(request.args.get("date_from",""),12)
+    date_to   = _safe(request.args.get("date_to",""),12)
+    clinician_f = _safe(request.args.get("clinician",""),50)
+    ward_f      = _safe(request.args.get("ward",""),60)
     query = """SELECT p.patient_name,p.patient_id,p.age,p.result,p.probability,
-                      p.created_at,u.username,p.notes,p.number_inpatient,p.number_emergency,p.number_diagnoses
+                      p.created_at,u.username,p.notes,p.number_inpatient,p.number_emergency,
+                      p.number_diagnoses,p.followup_status,p.followup_note,p.id,p.ward
                FROM predictions p JOIN users u ON p.user_id=u.id"""
     params = []; conditions = []
     if search:
@@ -999,11 +1324,20 @@ def all_patients():
         params += [f"%{search}%",f"%{search}%",f"%{search}%"]
     if filter_result:
         conditions.append("p.result=?"); params.append(filter_result)
+    if date_from:
+        conditions.append("DATE(p.created_at)>=?"); params.append(date_from)
+    if date_to:
+        conditions.append("DATE(p.created_at)<=?"); params.append(date_to)
+    if clinician_f:
+        conditions.append("u.username LIKE ?"); params.append(f"%{clinician_f}%")
+    if ward_f:
+        conditions.append("(u.ward LIKE ? OR p.ward LIKE ?)"); params += [f"%{ward_f}%",f"%{ward_f}%"]
     if conditions: query += " WHERE "+" AND ".join(conditions)
     query += " ORDER BY p.id DESC LIMIT 500"
     c.execute(query,params); rows = c.fetchall(); conn.close()
     keys = ["patient_name","patient_id","age","result","probability","created_at",
-            "clinician","notes","inpatient","emergency","diagnoses"]
+            "clinician","notes","inpatient","emergency","diagnoses",
+            "followup_status","followup_note","id","ward"]
     return jsonify({"patients":[dict(zip(keys,r)) for r in rows]})
 
 
@@ -1146,6 +1480,10 @@ if __name__ == "__main__":
     print(f" 🔒 Lockout : {MAX_FAILED_ATTEMPTS} attempts → {LOCKOUT_MINUTES}min lock")
     print(f" 🌐 CORS    : {ALLOWED_ORIGINS}")
     print(" 🔐 Admin   : admin / admin123 (MUST change on first login)")
-    print("="*60+"\n")
     port = int(os.environ.get("PORT", 10000))
+    print("="*60)
+    print(f" 🌐 OPEN IN BROWSER → http://127.0.0.1:{port}")
+    print(" ⚠️  Do NOT open healthcare-dashboard.html directly as a file")
+    print(" ✅ Flask now serves the frontend — just open the URL above")
+    print("="*60+"\n")
     app.run(host="0.0.0.0", port=port, debug=False)
