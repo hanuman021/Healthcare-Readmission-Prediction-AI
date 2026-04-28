@@ -4,11 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Healthcare-Readmission-Prediction-AI Model</title>
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script>
+    // Apply dark mode immediately before React hydrates — prevents flash
+    try { if(localStorage.getItem("hrp-dark")==="1") document.body.classList.add("dark"); } catch {}
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.23.5/babel.min.js" crossorigin></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -42,6 +46,60 @@
       --shadow:       0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,80,120,0.06);
       --shadow-lg:    0 8px 32px rgba(0,80,120,0.12);
     }
+
+    /* ===== DARK MODE ===== */
+    body.dark {
+      --bg:           #0f172a;
+      --bg2:          #1e293b;
+      --surface:      #1e293b;
+      --surface2:     #273549;
+      --border:       rgba(148,163,184,0.12);
+      --border-hover: rgba(148,163,184,0.24);
+      --accent:       #38bdf8;
+      --accent-dark:  #0ea5e9;
+      --accent-light: #0c2d48;
+      --accent-glow:  rgba(56,189,248,0.18);
+      --accent2:      #2dd4bf;
+      --danger:       #f87171;
+      --danger-light: #2d1515;
+      --success:      #34d399;
+      --success-light:#0d2b1d;
+      --warning:      #fbbf24;
+      --warning-light:#2d2006;
+      --purple:       #a78bfa;
+      --purple-light: #1e1535;
+      --text:         #f1f5f9;
+      --text-muted:   #94a3b8;
+      --text-dim:     #cbd5e1;
+      --shadow:       0 1px 3px rgba(0,0,0,0.3), 0 4px 16px rgba(0,0,0,0.2);
+      --shadow-lg:    0 8px 32px rgba(0,0,0,0.35);
+    }
+    body.dark .sidebar        { background:#1e293b; border-right-color:rgba(148,163,184,0.1); }
+    body.dark .sidebar-brand  { background:linear-gradient(135deg,#0c2d48,#0d2b1d); }
+    body.dark .topbar         { background:rgba(15,23,42,0.95); border-bottom-color:rgba(148,163,184,0.1); }
+    body.dark .card           { background:#1e293b; border-color:rgba(148,163,184,0.12); }
+    body.dark .kpi            { background:#1e293b; border-color:rgba(148,163,184,0.12); }
+    body.dark .modal          { background:#1e293b; }
+    body.dark .modal-overlay  { background:rgba(0,0,0,0.6); }
+    body.dark thead th        { background:#273549; }
+    body.dark tbody tr:hover td { background:#273549; }
+    body.dark .auth-scene     { background:linear-gradient(135deg,#0f172a 0%,#1a2744 40%,#0f2418 100%); }
+    body.dark .auth-right     { background:rgba(30,41,59,0.95); border-left-color:rgba(148,163,184,0.1); }
+    body.dark .auth-card      { background:#1e293b; border-color:rgba(56,189,248,0.2); }
+    body.dark .auth-card .field input,
+    body.dark .auth-card .field select { background:#273549; border-color:rgba(148,163,184,0.2); color:#f1f5f9; }
+    body.dark .field input, body.dark .field select { background:#273549; color:#f1f5f9; }
+    body.dark .search-bar     { background:#273549; color:#f1f5f9; }
+    body.dark .filter-pill    { background:#1e293b; color:#94a3b8; }
+    body.dark .filter-pill.active { background:#0c2d48; color:#38bdf8; }
+    body.dark .recommend-box  { background:#273549; }
+    body.dark .result-panel   { background:#1e293b; }
+    body.dark .dark-toggle    { background:#273549; }
+
+    /* Smooth theme transition */
+    body, body * { transition: background-color 0.25s ease, border-color 0.25s ease, color 0.15s ease; }
+    /* But don't transition animations / transforms (causes jank) */
+    body *, body *::before, body *::after { transition-property: background-color, border-color, color; }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -611,6 +669,19 @@
     }
     .logout-btn:hover { color: var(--danger); transform: rotate(15deg) scale(1.2); }
 
+    .dark-toggle {
+      background: none;
+      border: 1.5px solid var(--border);
+      border-radius: 99px;
+      cursor: pointer;
+      font-size: 15px;
+      width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+    .dark-toggle:hover { background: var(--accent-light); border-color: var(--accent); transform: scale(1.12); }
+
     .main { margin-left: var(--sidebar-w); flex: 1; min-height: 100vh; display: flex; flex-direction: column; }
 
     .topbar {
@@ -992,10 +1063,22 @@
   </style>
 </head>
 <body>
-<div id="root"></div>
+<div id="root">
+  <div id="boot-loader" style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f0f4f8;font-family:Inter,sans-serif;gap:16px;z-index:9999">
+    <div style="font-size:2.5rem">🏥</div>
+    <div style="font-size:1rem;font-weight:600;color:#1e3a5f">Healthcare Readmission AI</div>
+    <div style="font-size:0.85rem;color:#64748b">Loading application…</div>
+    <div id="boot-error" style="display:none;margin-top:12px;padding:14px 20px;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;color:#dc2626;font-size:0.82rem;max-width:480px;text-align:center"></div>
+  </div>
+</div>
 <script type="text/babel">
   const { useState, useEffect, useRef, useCallback } = React;
-  const BASE_URL = "https://healthcare-readmission-prediction-ai.onrender.com";
+  // -- Backend URL auto-detection --───────────────────────────────────────────
+  // When Flask serves this file at http://127.0.0.1:10000 → same-origin, BASE_URL=""
+  // When opened as file:// → must explicitly target Flask at port 10000
+  const BASE_URL = (window.location.protocol === "file:")
+    ? "http://127.0.0.1:10000"
+    : "";  // same-origin — Flask serves both HTML and API
   let _token = null;
 
   //TOKEN
@@ -1104,7 +1187,7 @@
 
     // No username field — login is email-based
 
-    // ── canvas animation (keep original) ──
+    // -- canvas animation (keep original) --
     useEffect(()=>{
       const cv = canvasRef.current; if(!cv) return;
       const ctx = cv.getContext("2d");
@@ -1214,7 +1297,7 @@
       return()=>{ window.removeEventListener("resize",resize); if(rafRef.current) cancelAnimationFrame(rafRef.current); };
     },[]);
 
-    // ── Validation per step ──────────────────────────────────────────────────
+    // -- Validation per step --────────────────────────────────────────────────
     const validateStep = (s) => {
       if(s===1){
         if(!reg.full_name.trim())       { showToast("Full name is required","error"); return false; }
@@ -1237,7 +1320,7 @@
     const nextStep = () => { if(validateStep(step)) setStep(s=>s+1); };
     const prevStep = () => setStep(s=>s-1);
 
-    // ── Login submit ─────────────────────────────────────────────────────────
+    // -- Login submit --───────────────────────────────────────────────────────
     const submitLogin = async() => {
       if(!login.email||!login.password){showToast("Enter email and password","error");return;}
       setLoading(true);
@@ -1256,7 +1339,7 @@
       setLoading(false);
     };
 
-    // ── Register submit (step 3 final) ───────────────────────────────────────
+    // -- Register submit (step 3 final) --─────────────────────────────────────
     const submitRegister = async() => {
       if(!validateStep(3)) return;
       setLoading(true);
@@ -1300,7 +1383,7 @@
       setLoading(false);
     };
 
-    // ── Step progress bar ────────────────────────────────────────────────────
+    // -- Step progress bar --──────────────────────────────────────────────────
     const StepBar = ()=>(
       <div style={{display:"flex",alignItems:"center",gap:0,marginBottom:20}}>
         {[{n:1,label:"Account"},{n:2,label:"Professional"},{n:3,label:"Hospital"}].map((s,i)=>(
@@ -1324,7 +1407,7 @@
       </div>
     );
 
-    // ── Shared input style ───────────────────────────────────────────────────
+    // -- Shared input style --─────────────────────────────────────────────────
     const inp = {width:"100%",padding:"9px 12px",background:"#f8fafc",
       border:"1.5px solid #cbd5e1",borderRadius:8,color:"#0f172a",
       fontFamily:"inherit",fontSize:"0.88rem",outline:"none",boxSizing:"border-box"};
@@ -1433,7 +1516,7 @@
                       setTimeout(()=>{setLoading(false);showToast("OTP verified! Set your new password.","success");setForgotStep(3);},900);
                     }}>{loading?"Verifying…":"Verify OTP →"}</button>
                     <div style={{textAlign:"center",marginTop:8,fontSize:"0.76rem",color:"#64748b"}}>
-                      Didn't receive? <span style={{color:"#0284c7",cursor:"pointer",fontWeight:600}} onClick={()=>showToast("OTP resent!","info")}>Resend OTP</span>
+                      Didn&#39;t receive? <span style={{color:"#0284c7",cursor:"pointer",fontWeight:600}} onClick={()=>showToast("OTP resent!","info")}>Resend OTP</span>
                     </div>
                   </>
                 )}
@@ -1491,7 +1574,7 @@
                 <p>Create your verified clinician account</p>
                 <StepBar/>
 
-                {/* ── STEP 1: Account ─────────────────────────────────── */}
+                {/* -- STEP 1: Account --───────────────────────────────-- */}
                 {step===1&&(
                   <>
                     <div style={row1}>
@@ -1523,7 +1606,7 @@
                   </>
                 )}
 
-                {/* ── STEP 2: Professional ────────────────────────────── */}
+                {/* -- STEP 2: Professional --──────────────────────────-- */}
                 {step===2&&(
                   <>
                     <div style={row2}>
@@ -1570,7 +1653,7 @@
                   </>
                 )}
 
-                {/* ── STEP 3: Hospital ─────────────────────────────────── */}
+                {/* -- STEP 3: Hospital --───────────────────────────────-- */}
                 {step===3&&(
                   <>
                     <div style={row1}>
@@ -1644,12 +1727,14 @@
   }
 
   //SIDEBAR
-  function Sidebar({user,tab,setTab,onLogout}) {
+  function Sidebar({user,tab,setTab,onLogout,dark,toggleDark}) {
     const clinicianItems = [
       {key:"dashboard",icon:"📊",label:"Dashboard"},
       {key:"predict",  icon:"🔮",label:"New Prediction"},
       {key:"history",  icon:"📜",label:"My Patients"},
+      {key:"bulkimport",icon:"📥",label:"Bulk CSV Import"},
       {key:"metrics",  icon:"📈",label:"Model Performance"},
+      {key:"alerts",   icon:"🔔",label:"Alert Settings"},
       {key:"account",  icon:"🔑",label:"My Account"},
     ];
     const adminItems = [
@@ -1695,6 +1780,9 @@
             <div className="user-name">{user.full_name||user.username}</div>
             <div className="user-role">{user.degree?`${user.degree} · `:""}{user.role==="admin"?"Administrator":"Clinician"}</div>
           </div>
+          <button className="dark-toggle" title={dark?"Switch to light mode":"Switch to dark mode"} onClick={toggleDark}>
+            {dark?"☀️":"🌙"}
+          </button>
           <button className="logout-btn" title="Sign out" onClick={onLogout}>⏻</button>
         </div>
       </aside>
@@ -1988,132 +2076,290 @@
       ?["Schedule follow-up within 7 days of discharge","Review and reconcile all medications","Coordinate with case management / social services","Arrange home health or extended monitoring","Consider patient education on diabetes self-management"]
       :["Standard 30-day post-discharge follow-up","Routine medication review at next visit","Provide patient education materials","Ensure patient understands discharge instructions"];
 
-    // Confidence zone detection
-    const prob = result?.probability || 0;
-    const isBorderline = prob >= 45 && prob <= 60;
-
-    // Discharge checklist items (shown for High Risk)
-    const DISCHARGE_CHECKLIST = [
-      "Patient educated on warning signs requiring immediate return",
-      "Follow-up appointment scheduled within 7 days",
-      "Medication reconciliation completed by pharmacist",
-      "Discharge summary sent to primary care physician",
-      "Patient has reliable transport and support at home",
-      "Home health or nursing visit arranged if needed",
-      "Patient contact number verified in records",
-      "Social work / case management consulted",
-    ];
-    const [checkedItems, setCheckedItems] = React.useState({});
-    const toggleCheck = (i) => setCheckedItems(p=>({...p,[i]:!p[i]}));
-    const checkedCount = Object.values(checkedItems).filter(Boolean).length;
-
-    // PDF export using jsPDF
-    const exportPDF = () => {
-      if(!result || !window.jspdf) { showToast("PDF library not loaded yet","error"); return; }
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({unit:"mm",format:"a4"});
-      const W = doc.internal.pageSize.getWidth();
-      let y = 18;
-
-      // Header
-      doc.setFillColor(2,132,199);
-      doc.rect(0,0,W,14,"F");
-      doc.setTextColor(255,255,255);
-      doc.setFontSize(11); doc.setFont("helvetica","bold");
-      doc.text("Healthcare Readmission Prediction — Clinical Report",W/2,9,{align:"center"});
-
-      y=22;
-      doc.setTextColor(30,41,59);
-      doc.setFontSize(8.5); doc.setFont("helvetica","normal");
-      doc.text(`Generated: ${new Date().toLocaleString()}   |   Model: ${result.model_version||"v3.2"}   |   Patient ID: ${result.patient_id||"—"}`,W/2,y,{align:"center"});
-
-      // Disclaimer
-      y+=6;
-      doc.setFillColor(254,243,199); doc.setDrawColor(217,119,6); doc.setLineWidth(0.4);
-      doc.roundedRect(10,y,W-20,9,2,2,"FD");
-      doc.setFontSize(8); doc.setFont("helvetica","bold"); doc.setTextColor(146,64,14);
-      doc.text("DECISION SUPPORT ONLY — This AI report does NOT replace clinical judgement. Confirm all findings clinically.",W/2,y+5.5,{align:"center"});
-
-      // Patient info
-      y+=15;
-      doc.setFontSize(10); doc.setFont("helvetica","bold"); doc.setTextColor(2,132,199);
-      doc.text("PATIENT INFORMATION",12,y);
-      doc.setDrawColor(2,132,199); doc.setLineWidth(0.4);
-      doc.line(12,y+2,W-12,y+2);
-      y+=8;
-      doc.setFont("helvetica","normal"); doc.setTextColor(30,41,59); doc.setFontSize(9);
-      const infoRows = [
-        ["Patient Name", vals.patient_name||"—", "Age", `${vals.age} yrs`],
-        ["Days in Hospital", String(vals.time_in_hospital), "Num Diagnoses", String(vals.number_diagnoses)],
-        ["Prior Inpatient", String(vals.number_inpatient), "Prior ER Visits", String(vals.number_emergency)],
-        ["Medications", String(vals.num_medications), "Insulin", vals.insulin],
-        ["Specialty", vals.specialty||"—", "Encounter Count", String(vals.patient_encounter_count)],
-      ];
-      infoRows.forEach(([k1,v1,k2,v2])=>{
-        doc.setFont("helvetica","bold"); doc.text(k1+":",12,y);
-        doc.setFont("helvetica","normal"); doc.text(v1,50,y);
-        doc.setFont("helvetica","bold"); doc.text(k2+":",W/2+2,y);
-        doc.setFont("helvetica","normal"); doc.text(v2,W/2+38,y);
-        y+=6;
-      });
-      y+=4;
-
-      // Result
-      doc.setFontSize(10); doc.setFont("helvetica","bold"); doc.setTextColor(2,132,199);
-      doc.text("PREDICTION RESULT",12,y);
-      doc.line(12,y+2,W-12,y+2); y+=8;
-      const isH = result.prediction==="High Risk";
-      doc.setFillColor(isH?254:209, isH?226:250, isH?226:229);
-      doc.setDrawColor(isH?220:5, isH?38:150, isH?38:105); doc.setLineWidth(0.6);
-      doc.roundedRect(12,y-4,W-24,18,3,3,"FD");
-      doc.setFontSize(15); doc.setFont("helvetica","bold");
-      doc.setTextColor(isH?153:6, isH?27:95, isH?27:70);
-      doc.text(`${isH?"⚠":"✓"} ${result.prediction}`,W/2,y+5,{align:"center"});
-      doc.setFontSize(10);
-      doc.text(`Readmission Probability: ${result.probability}%`,W/2,y+12,{align:"center"});
-      y+=24;
-
-      // Borderline warning
-      if(isBorderline){
-        doc.setFillColor(239,246,255); doc.setDrawColor(2,132,199); doc.setLineWidth(0.3);
-        doc.roundedRect(12,y,W-24,9,2,2,"FD");
-        doc.setFontSize(8); doc.setFont("helvetica","bold"); doc.setTextColor(12,74,110);
-        doc.text(`⚡ Borderline confidence (${result.probability}%) — independent clinical review strongly recommended.`,W/2,y+5.5,{align:"center"});
-        y+=14;
-      }
-
-      // Risk flags
-      if(riskFlags.length>0){
-        doc.setFontSize(10); doc.setFont("helvetica","bold"); doc.setTextColor(220,38,38);
-        doc.text("RISK FACTORS IDENTIFIED",12,y);
-        doc.setDrawColor(220,38,38); doc.setLineWidth(0.4);
-        doc.line(12,y+2,W-12,y+2); y+=8;
-        doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(153,27,27);
-        riskFlags.forEach(f=>{ doc.text(`• ${f}`,16,y); y+=5.5; });
-        y+=3;
-      }
-
-      // Recommendations
-      doc.setFontSize(10); doc.setFont("helvetica","bold"); doc.setTextColor(2,132,199);
-      doc.text("CLINICAL RECOMMENDATIONS",12,y);
-      doc.setDrawColor(2,132,199); doc.setLineWidth(0.4);
-      doc.line(12,y+2,W-12,y+2); y+=8;
-      doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(30,41,59);
-      recommendations.forEach(r=>{ doc.text(`→ ${r}`,16,y); y+=5.5; });
-
-      // Footer
-      const fY = doc.internal.pageSize.getHeight()-14;
-      doc.setFillColor(240,244,248); doc.rect(0,fY-3,W,17,"F");
-      doc.setFontSize(7.5); doc.setFont("helvetica","italic"); doc.setTextColor(100,116,139);
-      doc.text("This report is an AI-generated decision support tool and must not be used as the sole basis for clinical decisions. Always apply clinical judgement.",W/2,fY+2,{align:"center"});
-      doc.text(`HR-Prediction-AI ${result.model_version||"v3.2"} · Confidential · ${new Date().toLocaleDateString()}`,W/2,fY+8,{align:"center"});
-
-      doc.save(`readmission_${(vals.patient_name||"patient").replace(/\s+/g,"_")}_${result.patient_id||"report"}.pdf`);
-      showToast("PDF report downloaded!","success");
-    };
-
     const selStyle = {width:"100%",padding:"7px 9px",background:"var(--surface2)",border:"1.5px solid var(--border)",borderRadius:8,color:"var(--text)",fontFamily:"inherit",fontSize:"0.83rem",outline:"none",cursor:"pointer"};
     const labelStyle = {fontSize:"0.72rem",fontWeight:700,color:"var(--text-muted)",textTransform:"uppercase",letterSpacing:"0.4px",marginBottom:5};
+
+    // -- PDF Report Generator --──────────────────────────────────────────────
+    const DIAG_LABELS = ["","Circulatory / Heart","Respiratory","Digestive","Diabetes","Injury / Poisoning","Musculoskeletal","Genitourinary","Neoplasms","Mental Disorders","Neurological","Infectious Disease","Blood / Immune","Endocrine","Skin / Subcutaneous","Congenital","Perinatal","Symptoms / Ill-defined","Other","Unknown / Missing"];
+    const ADMIT_LABELS = {1:"Emergency",2:"Urgent",3:"Elective",4:"Newborn",5:"Trauma"};
+    const DISCH_LABELS = {1:"Discharged to Home",2:"Short-term Hospital",3:"SNF",4:"ICF",5:"Another Inpatient",6:"Home Health Care",7:"Left AMA",11:"Expired",13:"Hospice Home",14:"Hospice Medical",18:"Unknown",25:"Not Mapped",30:"Not Mapped"};
+
+    const generatePDF = () => {
+      if (!result) return;
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4" });
+      const W = 210; const H = 297;
+      const margin = 18;
+      const col = margin;
+      let y = 0;
+
+      // safe: strip any non-latin1 chars so helvetica never garbles
+      const safe = str => String(str||"").replace(/[^\x00-\xFF]/g,"").trim() || "-";
+      // truncate with plain ascii ellipsis
+      const trunc = (str, n) => { const s=safe(str); return s.length>n ? s.slice(0,n-2)+".." : s; };
+
+      const accent  = [2,132,199];
+      const danger  = [220,38,38];
+      const success = [5,150,105];
+      const purple  = [124,58,237];
+      const muted   = [100,116,139];
+      const dark    = [30,41,59];
+      const highlight = isHigh ? danger : success;
+
+      // -- HEADER BANNER --
+      doc.setFillColor(...accent);
+      doc.rect(0, 0, W, 28, "F");
+      doc.setFillColor(0,80,120);
+      doc.rect(0, 24, W, 4, "F");
+
+      doc.setFont("helvetica","bold");
+      doc.setFontSize(15);
+      doc.setTextColor(255,255,255);
+      doc.text("HR-Prediction-AI", margin, 11);
+      doc.setFontSize(8.5);
+      doc.setFont("helvetica","normal");
+      doc.text("Healthcare Readmission Risk Assessment Report", margin, 17);
+      doc.text("XGBoost + LightGBM Ensemble Model  |  v3.2", margin, 22);
+
+      const now = new Date();
+      const dateStr = now.toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"});
+      const timeStr = now.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"});
+      doc.setFontSize(7.5);
+      doc.setTextColor(200,230,255);
+      doc.text("Generated: "+dateStr+"  "+timeStr, W-margin, 11, {align:"right"});
+      doc.text("Clinical Decision Support Tool - Not a substitute for clinical judgment", W-margin, 17, {align:"right"});
+
+      y = 36;
+
+      // -- PATIENT IDENTITY BLOCK --
+      doc.setFillColor(240,249,255);
+      doc.roundedRect(margin, y, W-margin*2, 22, 3, 3, "F");
+      doc.setDrawColor(...accent);
+      doc.setLineWidth(0.5);
+      doc.roundedRect(margin, y, W-margin*2, 22, 3, 3, "S");
+
+      doc.setFont("helvetica","bold");
+      doc.setFontSize(13);
+      doc.setTextColor(...dark);
+      doc.text(safe(vals.patient_name) || "Unknown", margin+4, y+8);
+
+      doc.setFontSize(8);
+      doc.setFont("helvetica","normal");
+      doc.setTextColor(...muted);
+      if (result.patient_id) {
+        doc.setFont("helvetica","bold");
+        doc.setTextColor(...accent);
+        doc.text("Patient ID: "+safe(result.patient_id), margin+4, y+14);
+        doc.setFont("helvetica","normal");
+        doc.setTextColor(...muted);
+      }
+      doc.text("Age: "+vals.age+" yrs  |  Days in Hospital: "+vals.time_in_hospital+"  |  Specialty: "+safe(vals.specialty), margin+4, y+19);
+
+      // Risk badge
+      doc.setFillColor(...highlight);
+      doc.roundedRect(W-margin-38, y+3, 34, 16, 3, 3, "F");
+      doc.setFont("helvetica","bold");
+      doc.setFontSize(10);
+      doc.setTextColor(255,255,255);
+      doc.text(safe(result.prediction), W-margin-21, y+11.5, {align:"center"});
+      doc.setFontSize(8);
+      doc.text(result.probability+"% Risk", W-margin-21, y+17, {align:"center"});
+
+      y += 28;
+
+      // -- RISK SCORE BAR --
+      doc.setFont("helvetica","bold");
+      doc.setFontSize(8.5);
+      doc.setTextColor(...dark);
+      doc.text("READMISSION RISK SCORE", col, y+4);
+
+      // prob label left
+      doc.setFontSize(8.5);
+      doc.setTextColor(...highlight);
+      doc.text(result.probability+"%  Readmission Risk", col, y+4);
+      // no-readmission right
+      doc.setTextColor(...muted);
+      doc.setFont("helvetica","normal");
+      doc.setFontSize(8.5);
+      doc.text((100-result.probability).toFixed(1)+"%  No Readmission", W-margin, y+4, {align:"right"});
+
+      const barX = col; const barY = y+8; const barW = W-margin*2; const barH = 7;
+      doc.setFillColor(5,150,105);  doc.rect(barX,            barY, barW*0.4, barH, "F");
+      doc.setFillColor(251,191,36); doc.rect(barX+barW*0.4,   barY, barW*0.2, barH, "F");
+      doc.setFillColor(220,38,38);  doc.rect(barX+barW*0.6,   barY, barW*0.4, barH, "F");
+      const markerX = barX + Math.min(0.95,Math.max(0.05,result.probability/100)) * barW;
+      doc.setFillColor(255,255,255);
+      doc.circle(markerX, barY+barH/2, 3.5, "F");
+      doc.setDrawColor(...highlight);
+      doc.setLineWidth(1);
+      doc.circle(markerX, barY+barH/2, 3.5, "S");
+
+      doc.setFontSize(7);
+      doc.setTextColor(...muted);
+      doc.text("Low", barX, barY+barH+4);
+      doc.text("50%", barX+barW/2, barY+barH+4, {align:"center"});
+      doc.text("High", barX+barW, barY+barH+4, {align:"right"});
+
+      y += 26;
+
+      // -- TWO COLUMN LAYOUT --
+      const colW = (W - margin*2 - 6) / 2;
+      const col2 = col + colW + 6;
+
+      // LEFT: Clinical Parameters
+      doc.setFillColor(248,250,252);
+      doc.roundedRect(col, y, colW, 82, 3, 3, "F");
+      doc.setDrawColor(210,220,230);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(col, y, colW, 82, 3, 3, "S");
+      doc.setFillColor(...accent);
+      doc.roundedRect(col, y, colW, 7, 3, 3, "F");
+      doc.rect(col, y+3.5, colW, 3.5, "F");
+      doc.setFont("helvetica","bold");
+      doc.setFontSize(7.5);
+      doc.setTextColor(255,255,255);
+      doc.text("CLINICAL PARAMETERS", col+4, y+5);
+
+      const params = [
+        ["Lab Procedures",        vals.num_lab_procedures+" tests"],
+        ["Procedures Performed",  ""+vals.num_procedures],
+        ["Num Medications",       ""+vals.num_medications],
+        ["Prior Outpatient",      vals.number_outpatient+" visits"],
+        ["Prior ER Visits [*]",   vals.number_emergency+" visits"],
+        ["Prior Inpatient [*]",   vals.number_inpatient+" visits"],
+        ["Num Diagnoses",         ""+vals.number_diagnoses],
+        ["Total Encounters [*]",  ""+vals.patient_encounter_count],
+      ];
+      let py = y + 12;
+      params.forEach(([lbl, val], i) => {
+        if (i%2===0) { doc.setFillColor(252,254,255); doc.rect(col+1, py-3, colW-2, 8, "F"); }
+        doc.setFont("helvetica","normal"); doc.setFontSize(7.2); doc.setTextColor(...muted);
+        doc.text(lbl, col+4, py+2);
+        doc.setFont("helvetica","bold"); doc.setTextColor(...dark);
+        doc.text(safe(val), col+colW-4, py+2, {align:"right"});
+        py += 8.5;
+      });
+
+      // RIGHT: Admission & Diagnosis Details
+      doc.setFillColor(248,250,252);
+      doc.roundedRect(col2, y, colW, 82, 3, 3, "F");
+      doc.setDrawColor(210,220,230);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(col2, y, colW, 82, 3, 3, "S");
+      doc.setFillColor(...purple);
+      doc.roundedRect(col2, y, colW, 7, 3, 3, "F");
+      doc.rect(col2, y+3.5, colW, 3.5, "F");
+      doc.setFont("helvetica","bold"); doc.setFontSize(7.5); doc.setTextColor(255,255,255);
+      doc.text("ADMISSION & DIAGNOSIS", col2+4, y+5);
+
+      const admitLabel = ADMIT_LABELS[vals.admission_type_id] || ("Type "+vals.admission_type_id);
+      const dischLabel = DISCH_LABELS[vals.discharge_disposition_id] || ("Disp "+vals.discharge_disposition_id);
+      const diag1 = DIAG_LABELS[vals.diag_1_group] || "Unknown";
+      const diag2 = vals.diag_2_group ? (DIAG_LABELS[vals.diag_2_group]||"Unknown") : "None";
+      const diag3 = vals.diag_3_group ? (DIAG_LABELS[vals.diag_3_group]||"Unknown") : "None";
+
+      const admDetails = [
+        ["Admission Type",    admitLabel],
+        ["Discharge Disp.",   dischLabel],
+        ["Medical Specialty", vals.specialty],
+        ["Primary Dx [*]",    diag1],
+        ["Secondary Dx",      diag2],
+        ["Tertiary Dx",       diag3],
+        ["Insulin Use",       vals.insulin],
+        ["Diabetes Med",      vals.diabetesMed],
+      ];
+      let ay = y + 12;
+      admDetails.forEach(([lbl, val], i) => {
+        if (i%2===0) { doc.setFillColor(252,254,255); doc.rect(col2+1, ay-3, colW-2, 8, "F"); }
+        doc.setFont("helvetica","normal"); doc.setFontSize(7.2); doc.setTextColor(...muted);
+        doc.text(lbl, col2+4, ay+2);
+        doc.setFont("helvetica","bold"); doc.setTextColor(...dark);
+        doc.text(trunc(val, 22), col2+colW-4, ay+2, {align:"right"});
+        ay += 8.5;
+      });
+
+      y += 88;
+
+      // -- RISK FACTORS --
+      if (riskFlags.length > 0) {
+        const rfH = 9 + riskFlags.length*7;
+        doc.setFillColor(254,242,242);
+        doc.roundedRect(col, y, W-margin*2, rfH, 3, 3, "F");
+        doc.setDrawColor(220,38,38); doc.setLineWidth(0.4);
+        doc.roundedRect(col, y, W-margin*2, rfH, 3, 3, "S");
+        // left accent bar
+        doc.setFillColor(...danger);
+        doc.rect(col, y, 3, rfH, "F");
+        doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(...danger);
+        doc.text("! RISK FACTORS IDENTIFIED", col+7, y+6);
+        riskFlags.forEach((flag, i) => {
+          doc.setFont("helvetica","normal"); doc.setFontSize(7.5); doc.setTextColor(153,27,27);
+          doc.text("- "+safe(flag), col+9, y+13+i*7);
+        });
+        y += rfH;
+      }
+
+      y += 5;
+
+      // -- CLINICAL RECOMMENDATIONS --
+      const recH = 9 + recommendations.length*7;
+      doc.setFillColor(240,253,244);
+      doc.roundedRect(col, y, W-margin*2, recH, 3, 3, "F");
+      doc.setDrawColor(5,150,105); doc.setLineWidth(0.4);
+      doc.roundedRect(col, y, W-margin*2, recH, 3, 3, "S");
+      doc.setFillColor(...success);
+      doc.rect(col, y, 3, recH, "F");
+      doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(...success);
+      doc.text("CLINICAL RECOMMENDATIONS", col+7, y+6);
+      recommendations.forEach((rec, i) => {
+        doc.setFont("helvetica","normal"); doc.setFontSize(7.5); doc.setTextColor(6,78,59);
+        doc.text("- "+safe(rec), col+9, y+13+i*7);
+      });
+      y += recH + 5;
+
+      // -- CLINICAL NOTES --
+      if (vals.notes && vals.notes.trim()) {
+        const safeNote = safe(vals.notes);
+        const noteLines = doc.splitTextToSize(safeNote, W-margin*2-10);
+        const noteH = 9 + noteLines.length*6;
+        doc.setFillColor(255,251,235);
+        doc.roundedRect(col, y, W-margin*2, noteH, 3, 3, "F");
+        doc.setDrawColor(217,119,6); doc.setLineWidth(0.3);
+        doc.roundedRect(col, y, W-margin*2, noteH, 3, 3, "S");
+        doc.setFillColor(217,119,6); doc.rect(col, y, 3, noteH, "F");
+        doc.setFont("helvetica","bold"); doc.setFontSize(7.5); doc.setTextColor(146,64,14);
+        doc.text("CLINICAL NOTES", col+7, y+6);
+        doc.setFont("helvetica","normal"); doc.setFontSize(7.2); doc.setTextColor(120,53,15);
+        doc.text(noteLines, col+9, y+12);
+        y += noteH + 4;
+      }
+
+      y += 2;
+
+      // -- DISCLAIMER --
+      doc.setFillColor(241,245,249);
+      doc.roundedRect(col, y, W-margin*2, 16, 2, 2, "F");
+      doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(...muted);
+      doc.text("DISCLAIMER:", col+4, y+5.5);
+      doc.setFont("helvetica","normal");
+      doc.text("This report is generated by an AI decision support tool (XGBoost + LightGBM ensemble).", col+24, y+5.5);
+      doc.text("It is intended to assist clinical decision-making and must not replace judgment of a qualified clinician.", col+4, y+11);
+
+      // -- FOOTER --
+      doc.setFillColor(...accent);
+      doc.rect(0, H-12, W, 12, "F");
+      doc.setFont("helvetica","normal"); doc.setFontSize(7);
+      doc.setTextColor(200,230,255);
+      doc.text("HR-Prediction-AI  |  Clinical Decision Support  |  Confidential Medical Document", margin, H-5);
+      doc.setTextColor(255,255,255);
+      doc.text("Page 1  |  "+dateStr, W-margin, H-5, {align:"right"});
+
+      // -- SAVE --
+      const filename = "HR_Risk_Report_"+safe(vals.patient_name).replace(/\s+/g,"_")+"_"+(result.patient_id||"unknown")+".pdf";
+      doc.save(filename);
+      showToast("PDF report downloaded!", "success");
+    };
+    // --──────────────────────────────────────────────────────────────────────
 
     return (
       <div className="page">
@@ -2258,70 +2504,32 @@
                     </div>
                   </div>
                 )}
-                {/* Decision support disclaimer — always visible on result */}
-                <div style={{background:"#fffbeb",border:"1px solid rgba(217,119,6,0.35)",borderRadius:8,padding:"8px 12px",marginBottom:10,fontSize:"0.74rem",color:"#92400e",textAlign:"center",fontWeight:500}}>
-                  ⚠️ <strong>Decision Support Only</strong> — This AI prediction aids, but does NOT replace, clinical judgement. Always confirm findings clinically.
-                </div>
-
-                {/* Borderline / low-confidence warning */}
-                {isBorderline&&(
-                  <div style={{background:"#eff6ff",border:"1px solid rgba(2,132,199,0.35)",borderRadius:8,padding:"8px 12px",marginBottom:10,fontSize:"0.78rem",color:"#1e40af",fontWeight:600,textAlign:"center"}}>
-                    ⚡ <strong>Borderline Confidence ({result.probability}%)</strong> — Result is in the 45–60% zone. Independent clinical review strongly recommended before acting on this prediction.
-                  </div>
-                )}
-
                 <div className="recommend-box">
                   <h4>Clinical Recommendations</h4>
                   <ul>{recommendations.map((r,i)=><li key={i}>{r}</li>)}</ul>
                 </div>
                 {riskFlags.length>0&&(
                   <div className="recommend-box" style={{marginTop:10,borderColor:"rgba(220,38,38,0.25)",background:"var(--danger-light)"}}>
-                    <h4 style={{color:"var(--danger)"}}>⚠ Risk Factors Detected</h4>
+                    <h4 style={{color:"var(--danger)"}}>⚠ Risk Factors</h4>
                     <ul>{riskFlags.map((f,i)=><li key={i} style={{color:"#991b1b"}}>{f}</li>)}</ul>
                   </div>
                 )}
-
-                {/* Discharge checklist — High Risk only */}
-                {isHigh&&(
-                  <div style={{marginTop:12,background:"var(--surface2)",border:"1.5px solid rgba(220,38,38,0.2)",borderRadius:10,padding:"12px 14px"}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                      <h4 style={{fontSize:"0.76rem",fontWeight:700,color:"var(--danger)",textTransform:"uppercase",letterSpacing:"0.5px",margin:0}}>📋 Discharge Safety Checklist</h4>
-                      <span style={{fontSize:"0.7rem",fontWeight:700,color:checkedCount===DISCHARGE_CHECKLIST.length?"var(--success)":"var(--text-muted)"}}>
-                        {checkedCount}/{DISCHARGE_CHECKLIST.length} complete
-                      </span>
-                    </div>
-                    {DISCHARGE_CHECKLIST.map((item,i)=>(
-                      <div key={i} onClick={()=>toggleCheck(i)}
-                        style={{display:"flex",alignItems:"flex-start",gap:8,padding:"6px 4px",cursor:"pointer",borderRadius:6,transition:"background 0.14s",marginBottom:2,
-                          background:checkedItems[i]?"rgba(5,150,105,0.07)":"transparent"}}
-                        onMouseEnter={e=>e.currentTarget.style.background=checkedItems[i]?"rgba(5,150,105,0.1)":"rgba(0,0,0,0.03)"}
-                        onMouseLeave={e=>e.currentTarget.style.background=checkedItems[i]?"rgba(5,150,105,0.07)":"transparent"}>
-                        <div style={{width:16,height:16,borderRadius:4,border:`2px solid ${checkedItems[i]?"var(--success)":"rgba(0,0,0,0.2)"}`,
-                          background:checkedItems[i]?"var(--success)":"white",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1,transition:"all 0.15s"}}>
-                          {checkedItems[i]&&<span style={{color:"white",fontSize:"0.65rem",fontWeight:800}}>✓</span>}
-                        </div>
-                        <span style={{fontSize:"0.78rem",color:checkedItems[i]?"var(--success)":"var(--text-dim)",textDecoration:checkedItems[i]?"line-through":"none",transition:"all 0.15s",lineHeight:1.4}}>{item}</span>
-                      </div>
-                    ))}
-                    {checkedCount===DISCHARGE_CHECKLIST.length&&(
-                      <div style={{marginTop:8,textAlign:"center",color:"var(--success)",fontSize:"0.78rem",fontWeight:700}}>
-                        ✅ All discharge steps confirmed
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* PDF Export button */}
-                <button onClick={exportPDF}
-                  style={{marginTop:14,width:"100%",padding:"10px",background:"linear-gradient(135deg,#0284c7,#0d9488)",
-                    color:"white",border:"none",borderRadius:8,fontFamily:"inherit",fontSize:"0.88rem",
-                    fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:7,
-                    boxShadow:"0 3px 12px rgba(2,132,199,0.3)",transition:"all 0.18s"}}
-                  onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-1px)";e.currentTarget.style.boxShadow="0 5px 18px rgba(2,132,199,0.4)";}}
-                  onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="0 3px 12px rgba(2,132,199,0.3)";}}>
-                  📄 Export PDF Report
+                <button onClick={generatePDF}
+                  style={{
+                    marginTop:14,width:"100%",padding:"10px 0",
+                    background:"linear-gradient(135deg,#0284c7,#0d9488)",
+                    color:"white",border:"none",borderRadius:9,
+                    fontFamily:"inherit",fontSize:"0.84rem",fontWeight:700,
+                    cursor:"pointer",display:"flex",alignItems:"center",
+                    justifyContent:"center",gap:7,
+                    boxShadow:"0 3px 12px rgba(2,132,199,0.35)",
+                    transition:"all 0.2s"
+                  }}
+                  onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-1px)";e.currentTarget.style.boxShadow="0 6px 18px rgba(2,132,199,0.45)";}}
+                  onMouseLeave={e=>{e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.boxShadow="0 3px 12px rgba(2,132,199,0.35)";}}>
+                  <span style={{fontSize:"1rem"}}>📄</span>
+                  Generate PDF Report
                 </button>
-
               </>
             ):(
               <div style={{color:"var(--text-muted)",fontSize:"0.88rem",marginTop:10}}>
@@ -2336,17 +2544,78 @@
   }
 
   //HISTORY
+  // -- Follow-up status badge helper --────────────────────────────────────────
+  const FOLLOWUP_LABELS = {
+    pending:        {label:"Pending",        color:"#d97706",bg:"#fef3c7",border:"rgba(217,119,6,0.25)"},
+    followup_booked:{label:"Follow-up Booked",color:"#0284c7",bg:"#e0f2fe",border:"rgba(2,132,199,0.25)"},
+    discharged:     {label:"Discharged",     color:"#059669",bg:"#d1fae5",border:"rgba(5,150,105,0.25)"},
+    readmitted:     {label:"Readmitted",     color:"#dc2626",bg:"#fee2e2",border:"rgba(220,38,38,0.25)"},
+    completed:      {label:"Completed",      color:"#7c3aed",bg:"#ede9fe",border:"rgba(124,58,237,0.25)"},
+    no_action:      {label:"No Action",      color:"#64748b",bg:"#f1f5f9",border:"rgba(100,116,139,0.2)"},
+  };
+
+  function FollowupBadge({status}) {
+    const s = FOLLOWUP_LABELS[status] || FOLLOWUP_LABELS.pending;
+    return <span style={{fontSize:"0.7rem",fontWeight:700,padding:"2px 8px",borderRadius:99,
+      color:s.color,background:s.bg,border:`1px solid ${s.border}`,whiteSpace:"nowrap"}}>{s.label}</span>;
+  }
+
+  function ShapDrawer({shap_json,onClose}) {
+    let items = [];
+    try { items = JSON.parse(shap_json||"[]"); } catch {}
+    if(!items.length) return null;
+    const max = Math.max(...items.map(x=>Math.abs(x.value)),0.01);
+    return (
+      <div style={{position:"fixed",inset:0,zIndex:3000,background:"rgba(0,0,0,0.45)",display:"flex",alignItems:"center",justifyContent:"center"}}
+        onClick={onClose}>
+        <div style={{background:"var(--surface)",borderRadius:14,padding:24,minWidth:340,maxWidth:480,width:"90%",boxShadow:"0 12px 48px rgba(0,0,0,0.25)"}}
+          onClick={e=>e.stopPropagation()}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+            <div style={{fontWeight:700,fontSize:"0.92rem",color:"var(--text)"}}>🧠 Feature Contributions</div>
+            <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:18,color:"var(--text-muted)"}}>✕</button>
+          </div>
+          <div style={{fontSize:"0.72rem",color:"var(--text-muted)",marginBottom:14}}>Which inputs drove this prediction the most</div>
+          {items.map((it,i)=>(
+            <div key={i} style={{marginBottom:9}}>
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:"0.78rem",marginBottom:4}}>
+                <span style={{color:"var(--text-dim)",fontWeight:500}}>{it.feature}</span>
+                <span style={{fontFamily:"'JetBrains Mono',monospace",color:it.value>0?"var(--danger)":"var(--success)",fontSize:"0.75rem",fontWeight:600}}>{it.value>0?"+":""}{(it.value*100).toFixed(1)}%</span>
+              </div>
+              <div style={{height:7,borderRadius:99,background:"var(--bg2)",overflow:"hidden"}}>
+                <div style={{height:"100%",borderRadius:99,width:`${Math.abs(it.value)/max*100}%`,
+                  background:it.value>0?"linear-gradient(90deg,#f87171,#dc2626)":"linear-gradient(90deg,#34d399,#059669)",
+                  transition:"width 0.5s ease"}}/>
+              </div>
+            </div>
+          ))}
+          <div style={{marginTop:14,fontSize:"0.7rem",color:"var(--text-muted)",textAlign:"center",fontStyle:"italic"}}>
+            Red = increases risk · Green = decreases risk
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   function History({showToast}) {
-    const [rows,setRows] = useState([]);
-    const [loading,setLoading] = useState(true);
-    const [search,setSearch] = useState("");
+    const [rows,setRows]           = useState([]);
+    const [loading,setLoading]     = useState(true);
+    const [search,setSearch]       = useState("");
     const [filterResult,setFilterResult] = useState("");
+    const [dateFrom,setDateFrom]   = useState("");
+    const [dateTo,setDateTo]       = useState("");
+    const [shapRow,setShapRow]     = useState(null);
+    const [fupRow,setFupRow]       = useState(null);
+    const [fupStatus,setFupStatus] = useState("");
+    const [fupNote,setFupNote]     = useState("");
+    const [savingFup,setSavingFup] = useState(false);
 
     const load = ()=>{
       setLoading(true);
       const params = new URLSearchParams();
-      if(search) params.set("search",search);
+      if(search)       params.set("search",search);
       if(filterResult) params.set("result",filterResult);
+      if(dateFrom)     params.set("date_from",dateFrom);
+      if(dateTo)       params.set("date_to",dateTo);
       api(`/history?${params.toString()}`)
         .then(d=>{setRows(d.history||[]);setLoading(false);})
         .catch(()=>{showToast("Failed to load history","error");setLoading(false);});
@@ -2354,40 +2623,100 @@
 
     useEffect(()=>{load();},[]);
 
+    const openFup = (row)=>{ setFupRow(row); setFupStatus(row.followup_status||"pending"); setFupNote(row.followup_note||""); };
+    const saveFup = async()=>{
+      if(!fupRow) return;
+      setSavingFup(true);
+      try {
+        await api(`/followup/${fupRow.id}`,{method:"PUT",body:JSON.stringify({status:fupStatus,note:fupNote})});
+        showToast("Follow-up status updated","success");
+        setFupRow(null);
+        load();
+      } catch { showToast("Failed to update","error"); }
+      setSavingFup(false);
+    };
+
     return (
       <div className="page">
+        {shapRow&&<ShapDrawer shap_json={shapRow.shap_json} onClose={()=>setShapRow(null)}/>}
+
+        {/* Follow-up modal */}
+        {fupRow&&(
+          <div style={{position:"fixed",inset:0,zIndex:3000,background:"rgba(0,0,0,0.45)",display:"flex",alignItems:"center",justifyContent:"center"}}
+            onClick={()=>setFupRow(null)}>
+            <div style={{background:"var(--surface)",borderRadius:14,padding:24,minWidth:320,maxWidth:420,width:"90%"}} onClick={e=>e.stopPropagation()}>
+              <div style={{fontWeight:700,fontSize:"0.95rem",marginBottom:4}}>📋 Update Follow-up</div>
+              <div style={{fontSize:"0.8rem",color:"var(--text-muted)",marginBottom:16}}>{fupRow.patient_name} · {fupRow.patient_id}</div>
+              <div style={{marginBottom:12}}>
+                <label style={{fontSize:"0.72rem",fontWeight:700,color:"var(--text-muted)",textTransform:"uppercase",letterSpacing:"0.4px",display:"block",marginBottom:6}}>Status</label>
+                <select value={fupStatus} onChange={e=>setFupStatus(e.target.value)}
+                  style={{width:"100%",padding:"8px 10px",borderRadius:8,border:"1.5px solid var(--border)",background:"var(--surface2)",color:"var(--text)",fontFamily:"inherit",fontSize:"0.85rem"}}>
+                  {Object.entries(FOLLOWUP_LABELS).map(([k,v])=>(
+                    <option key={k} value={k}>{v.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div style={{marginBottom:16}}>
+                <label style={{fontSize:"0.72rem",fontWeight:700,color:"var(--text-muted)",textTransform:"uppercase",letterSpacing:"0.4px",display:"block",marginBottom:6}}>Note (optional)</label>
+                <textarea value={fupNote} onChange={e=>setFupNote(e.target.value)} rows={3}
+                  placeholder="e.g. Follow-up booked for 15 Jan at OPD..."
+                  style={{width:"100%",padding:"8px 10px",borderRadius:8,border:"1.5px solid var(--border)",background:"var(--surface2)",color:"var(--text)",fontFamily:"inherit",fontSize:"0.83rem",resize:"vertical"}}/>
+              </div>
+              <div style={{display:"flex",gap:10}}>
+                <button onClick={saveFup} disabled={savingFup}
+                  style={{flex:1,padding:"9px",background:"var(--accent)",color:"white",border:"none",borderRadius:8,fontFamily:"inherit",fontSize:"0.85rem",fontWeight:600,cursor:"pointer"}}>
+                  {savingFup?"Saving…":"Save Status"}
+                </button>
+                <button onClick={()=>setFupRow(null)}
+                  style={{padding:"9px 16px",background:"var(--surface2)",color:"var(--text-muted)",border:"1px solid var(--border)",borderRadius:8,fontFamily:"inherit",fontSize:"0.85rem",cursor:"pointer"}}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="card">
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16,flexWrap:"wrap",gap:12}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12,flexWrap:"wrap",gap:12}}>
             <div>
               <div className="card-title">📜 My Patients</div>
-              <div className="card-sub" style={{marginBottom:0}}>{rows.length} records — search by name or patient ID</div>
-            </div>
-            <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-              <input className="search-bar" value={search} onChange={e=>setSearch(e.target.value)}
-                placeholder="Search name / ID…" style={{width:200}}
-                onKeyDown={e=>e.key==="Enter"&&load()}/>
-              <button className="filter-pill" style={{padding:"6px 12px",cursor:"pointer",
-                background:"var(--accent)",color:"white",border:"none",borderRadius:8,
-                fontSize:"0.8rem",fontWeight:600,fontFamily:"inherit"}} onClick={load}>Search</button>
-              {["","High Risk","Low Risk"].map(f=>(
-                <button key={f} className={`filter-pill ${filterResult===f?"active":""}`}
-                  onClick={()=>setFilterResult(f)}>
-                  {f||"All"}
-                </button>
-              ))}
+              <div className="card-sub" style={{marginBottom:0}}>{rows.length} records</div>
             </div>
           </div>
 
+          {/* Advanced search bar */}
+          <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",marginBottom:14,padding:"12px 14px",background:"var(--surface2)",borderRadius:10,border:"1px solid var(--border)"}}>
+            <input className="search-bar" value={search} onChange={e=>setSearch(e.target.value)}
+              placeholder="🔍 Search name / Patient ID…" style={{flex:"1 1 160px",minWidth:140}}
+              onKeyDown={e=>e.key==="Enter"&&load()}/>
+            <input type="date" value={dateFrom} onChange={e=>setDateFrom(e.target.value)}
+              style={{padding:"7px 9px",borderRadius:8,border:"1.5px solid var(--border)",background:"var(--surface)",color:"var(--text)",fontFamily:"inherit",fontSize:"0.8rem"}}/>
+            <span style={{color:"var(--text-muted)",fontSize:"0.78rem"}}>to</span>
+            <input type="date" value={dateTo} onChange={e=>setDateTo(e.target.value)}
+              style={{padding:"7px 9px",borderRadius:8,border:"1.5px solid var(--border)",background:"var(--surface)",color:"var(--text)",fontFamily:"inherit",fontSize:"0.8rem"}}/>
+            {["","High Risk","Low Risk"].map(f=>(
+              <button key={f} className={`filter-pill ${filterResult===f?"active":""}`}
+                onClick={()=>setFilterResult(f)}>{f||"All"}</button>
+            ))}
+            <button onClick={load}
+              style={{padding:"7px 16px",background:"var(--accent)",color:"white",border:"none",borderRadius:8,fontSize:"0.8rem",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
+              Search
+            </button>
+            <button onClick={()=>{setSearch("");setFilterResult("");setDateFrom("");setDateTo("");setTimeout(load,50);}}
+              style={{padding:"7px 12px",background:"var(--surface)",color:"var(--text-muted)",border:"1px solid var(--border)",borderRadius:8,fontSize:"0.8rem",cursor:"pointer",fontFamily:"inherit"}}>
+              Reset
+            </button>
+          </div>
+
           {loading?<div className="spinner"/>:rows.length===0?(
-            <div className="empty-state"><div className="emoji">📭</div><p>No records yet. Run a prediction to get started.</p></div>
+            <div className="empty-state"><div className="emoji">📭</div><p>No records found.</p></div>
           ):(
             <div className="table-wrap">
               <table>
                 <thead><tr>
                   <th>#</th><th>Patient ID</th><th>Name</th><th>Age</th>
-                  <th>Hosp Days</th><th>Inpatient</th><th>ER Visits</th>
-                  <th>Diagnoses</th><th>Meds</th><th>Confidence</th>
-                  <th>Result</th><th>Notes</th><th>Date</th>
+                  <th>Result</th><th>Confidence</th><th>Follow-up</th>
+                  <th>Inpatient</th><th>ER</th><th>Meds</th><th>Date</th><th>Actions</th>
                 </tr></thead>
                 <tbody>
                   {rows.map((row,i)=>(
@@ -2396,15 +2725,27 @@
                       <td><span className="badge badge-pid">{row.patient_id||"—"}</span></td>
                       <td style={{fontWeight:600,color:"var(--text)"}}>{row.patient_name||"—"}</td>
                       <td>{row.age??"—"}</td>
-                      <td>{row.time_in_hospital}</td>
-                      <td>{row.number_inpatient}</td>
-                      <td>{row.number_emergency??0}</td>
-                      <td>{row.number_diagnoses??0}</td>
-                      <td>{row.num_medications}</td>
-                      <td style={{fontFamily:"'JetBrains Mono',monospace"}}>{row.probability?`${row.probability}%`:"—"}</td>
                       <td><span className={`badge ${row.result==="High Risk"?"badge-danger":"badge-success"}`}>{row.result}</span></td>
-                      <td style={{maxWidth:120,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",color:"var(--text-muted)",fontSize:"0.78rem"}}>{row.notes||"—"}</td>
+                      <td style={{fontFamily:"'JetBrains Mono',monospace"}}>{row.probability?`${row.probability}%`:"—"}</td>
+                      <td><FollowupBadge status={row.followup_status||"pending"}/></td>
+                      <td>{row.number_inpatient??0}</td>
+                      <td>{row.number_emergency??0}</td>
+                      <td>{row.num_medications??0}</td>
                       <td style={{color:"var(--text-muted)",fontSize:"0.78rem",whiteSpace:"nowrap"}}>{row.created_at?row.created_at.split(" ")[0]:"—"}</td>
+                      <td>
+                        <div style={{display:"flex",gap:5}}>
+                          <button title="Update follow-up" onClick={()=>openFup(row)}
+                            style={{padding:"3px 8px",fontSize:"0.73rem",background:"var(--accent-light)",color:"var(--accent)",border:"1px solid rgba(2,132,199,0.2)",borderRadius:6,cursor:"pointer",fontFamily:"inherit",fontWeight:600}}>
+                            📋
+                          </button>
+                          {row.shap_json&&row.shap_json!=="[]"&&(
+                            <button title="View feature explanation" onClick={()=>setShapRow(row)}
+                              style={{padding:"3px 8px",fontSize:"0.73rem",background:"var(--purple-light)",color:"var(--purple)",border:"1px solid rgba(124,58,237,0.2)",borderRadius:6,cursor:"pointer",fontFamily:"inherit",fontWeight:600}}>
+                              🧠
+                            </button>
+                          )}
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -2534,53 +2875,141 @@
 
         <div className="card">
           <div className="card-title">📌 Feature Importance</div>
-          <div className="card-sub">Relative contribution of each input to the model's predictions</div>
+          <div className="card-sub">Relative contribution of each input to the model&#39;s predictions</div>
           <div className="chart-wrap" style={{height:200}}><canvas ref={impRef}></canvas></div>
         </div>
       </div>
     );
   }
 
-  // ── ADMIN-ONLY COMPONENTS ───────────────────────────
+  // -- ADMIN-ONLY COMPONENTS --─────────────────────────
 
   //ALLPATIENTS (admin only)
   function AllPatients({showToast}) {
-    const [rows,setRows] = useState([]);
-    const [loading,setLoading] = useState(true);
-    const [search,setSearch] = useState("");
+    const [rows,setRows]             = useState([]);
+    const [loading,setLoading]       = useState(true);
+    const [search,setSearch]         = useState("");
     const [filterResult,setFilterResult] = useState("");
+    const [dateFrom,setDateFrom]     = useState("");
+    const [dateTo,setDateTo]         = useState("");
+    const [clinicianF,setClinicianF] = useState("");
+    const [wardF,setWardF]           = useState("");
+    const [fupRow,setFupRow]         = useState(null);
+    const [fupStatus,setFupStatus]   = useState("pending");
+    const [fupNote,setFupNote]       = useState("");
+    const [shapRow,setShapRow]       = useState(null);
 
     const load = ()=>{
       setLoading(true);
       const params = new URLSearchParams();
-      if(search) params.set("search",search);
+      if(search)       params.set("search",search);
       if(filterResult) params.set("result",filterResult);
+      if(dateFrom)     params.set("date_from",dateFrom);
+      if(dateTo)       params.set("date_to",dateTo);
+      if(clinicianF)   params.set("clinician",clinicianF);
+      if(wardF)        params.set("ward",wardF);
       api(`/all-patients?${params.toString()}`)
         .then(d=>{setRows(d.patients||[]);setLoading(false);})
         .catch(()=>{showToast("Failed to load patients","error");setLoading(false);});
     };
-
     useEffect(()=>{load();},[]);
+
+    const openFup=(row)=>{setFupRow(row);setFupStatus(row.followup_status||"pending");setFupNote(row.followup_note||"");};
+    const saveFup=async()=>{
+      if(!fupRow) return;
+      try {
+        await api(`/followup/${fupRow.id}`,{method:"PUT",body:JSON.stringify({status:fupStatus,note:fupNote})});
+        showToast("Follow-up updated","success"); setFupRow(null); load();
+      } catch { showToast("Failed to update","error"); }
+    };
+
+    // CSV export — uses \n escape (not literal newline) so Babel parses correctly
+    const exportCSV = () => {
+      const NL = "\n";
+      const headers = ["Patient ID","Name","Age","Result","Probability","Clinician","Ward","Follow-up","Date"];
+      const csvRows = rows.map(r => {
+        const fupLabel = (FOLLOWUP_LABELS[r.followup_status] || {}).label || "Pending";
+        const dateStr  = r.created_at ? r.created_at.split(" ")[0] : "";
+        const cells    = [r.patient_id, r.patient_name, r.age, r.result,
+                          r.probability, r.clinician, r.ward || "",
+                          fupLabel, dateStr];
+        return cells.map(v => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"').join(",");
+      });
+      const csvContent = headers.join(",") + NL + csvRows.join(NL);
+      const blob = new Blob([csvContent], {type: "text/csv;charset=utf-8;"});
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href     = url;
+      a.download = "patients_export.csv";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast("CSV exported", "success");
+    };
 
     return (
       <div className="page">
+        {shapRow&&<ShapDrawer shap_json={shapRow.shap_json} onClose={()=>setShapRow(null)}/>}
+
+        {fupRow&&(
+          <div style={{position:"fixed",inset:0,zIndex:3000,background:"rgba(0,0,0,0.45)",display:"flex",alignItems:"center",justifyContent:"center"}}
+            onClick={()=>setFupRow(null)}>
+            <div style={{background:"var(--surface)",borderRadius:14,padding:24,minWidth:320,maxWidth:420,width:"90%"}} onClick={e=>e.stopPropagation()}>
+              <div style={{fontWeight:700,fontSize:"0.95rem",marginBottom:4}}>📋 Update Follow-up</div>
+              <div style={{fontSize:"0.8rem",color:"var(--text-muted)",marginBottom:16}}>{fupRow.patient_name} · {fupRow.patient_id}</div>
+              <select value={fupStatus} onChange={e=>setFupStatus(e.target.value)}
+                style={{width:"100%",padding:"8px 10px",borderRadius:8,border:"1.5px solid var(--border)",background:"var(--surface2)",color:"var(--text)",fontFamily:"inherit",fontSize:"0.85rem",marginBottom:12}}>
+                {Object.entries(FOLLOWUP_LABELS).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}
+              </select>
+              <textarea value={fupNote} onChange={e=>setFupNote(e.target.value)} rows={3} placeholder="Note…"
+                style={{width:"100%",padding:"8px 10px",borderRadius:8,border:"1.5px solid var(--border)",background:"var(--surface2)",color:"var(--text)",fontFamily:"inherit",fontSize:"0.83rem",resize:"vertical",marginBottom:12}}/>
+              <div style={{display:"flex",gap:10}}>
+                <button onClick={saveFup} style={{flex:1,padding:"9px",background:"var(--accent)",color:"white",border:"none",borderRadius:8,fontFamily:"inherit",fontSize:"0.85rem",fontWeight:600,cursor:"pointer"}}>Save</button>
+                <button onClick={()=>setFupRow(null)} style={{padding:"9px 16px",background:"var(--surface2)",color:"var(--text-muted)",border:"1px solid var(--border)",borderRadius:8,fontFamily:"inherit",fontSize:"0.85rem",cursor:"pointer"}}>Cancel</button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="card">
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16,flexWrap:"wrap",gap:12}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12,flexWrap:"wrap",gap:12}}>
             <div>
               <div className="card-title" style={{color:"var(--purple)"}}>🏥 All Patients — Admin View</div>
-              <div className="card-sub" style={{marginBottom:0}}>Platform-wide patient database — {rows.length} records visible to admins only</div>
+              <div className="card-sub" style={{marginBottom:0}}>{rows.length} records</div>
             </div>
-            <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
-              <input className="search-bar" value={search} onChange={e=>setSearch(e.target.value)}
-                placeholder="Search name / ID / clinician…" style={{width:220}}
-                onKeyDown={e=>e.key==="Enter"&&load()}/>
-              <button onClick={load} style={{padding:"7px 14px",background:"var(--accent)",color:"white",border:"none",borderRadius:8,fontSize:"0.8rem",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Search</button>
+            <button onClick={exportCSV}
+              style={{padding:"7px 16px",background:"var(--success)",color:"white",border:"none",borderRadius:8,fontSize:"0.8rem",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
+              ⬇ Export CSV
+            </button>
+          </div>
+
+          {/* Advanced filter bar */}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:8,marginBottom:14,padding:"12px 14px",background:"var(--surface2)",borderRadius:10,border:"1px solid var(--border)"}}>
+            <input className="search-bar" value={search} onChange={e=>setSearch(e.target.value)}
+              placeholder="🔍 Name / ID…" onKeyDown={e=>e.key==="Enter"&&load()}/>
+            <input className="search-bar" value={clinicianF} onChange={e=>setClinicianF(e.target.value)}
+              placeholder="Clinician…"/>
+            <input className="search-bar" value={wardF} onChange={e=>setWardF(e.target.value)}
+              placeholder="Ward…"/>
+            <input type="date" value={dateFrom} onChange={e=>setDateFrom(e.target.value)}
+              style={{padding:"7px 9px",borderRadius:8,border:"1.5px solid var(--border)",background:"var(--surface)",color:"var(--text)",fontFamily:"inherit",fontSize:"0.8rem"}}/>
+            <input type="date" value={dateTo} onChange={e=>setDateTo(e.target.value)}
+              style={{padding:"7px 9px",borderRadius:8,border:"1.5px solid var(--border)",background:"var(--surface)",color:"var(--text)",fontFamily:"inherit",fontSize:"0.8rem"}}/>
+            <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
               {["","High Risk","Low Risk"].map(f=>(
                 <button key={f} className={`filter-pill ${filterResult===f?"active":""}`}
                   onClick={()=>setFilterResult(f)}>{f||"All"}</button>
               ))}
             </div>
+            <div style={{display:"flex",gap:6}}>
+              <button onClick={load}
+                style={{flex:1,padding:"7px",background:"var(--accent)",color:"white",border:"none",borderRadius:8,fontSize:"0.8rem",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Search</button>
+              <button onClick={()=>{setSearch("");setFilterResult("");setDateFrom("");setDateTo("");setClinicianF("");setWardF("");setTimeout(load,50);}}
+                style={{padding:"7px 10px",background:"var(--surface)",color:"var(--text-muted)",border:"1px solid var(--border)",borderRadius:8,fontSize:"0.8rem",cursor:"pointer",fontFamily:"inherit"}}>Reset</button>
+            </div>
           </div>
+
           {loading?<div className="spinner"/>:rows.length===0?(
             <div className="empty-state"><div className="emoji">📭</div><p>No patients found.</p></div>
           ):(
@@ -2588,9 +3017,8 @@
               <table>
                 <thead><tr>
                   <th>#</th><th>Patient ID</th><th>Name</th><th>Age</th>
-                  <th>Result</th><th>Confidence</th>
-                  <th>Inpatient</th><th>ER</th><th>Diagnoses</th>
-                  <th>Clinician</th><th>Notes</th><th>Date</th>
+                  <th>Result</th><th>Conf.</th><th>Follow-up</th>
+                  <th>Clinician</th><th>Ward</th><th>Date</th><th>Actions</th>
                 </tr></thead>
                 <tbody>
                   {rows.map((row,i)=>(
@@ -2600,13 +3028,21 @@
                       <td style={{fontWeight:600,color:"var(--text)"}}>{row.patient_name||"—"}</td>
                       <td>{row.age||"—"}</td>
                       <td><span className={`badge ${row.result==="High Risk"?"badge-danger":"badge-success"}`}>{row.result}</span></td>
-                      <td style={{fontFamily:"'JetBrains Mono',monospace"}}>{row.probability?`${row.probability}%`:"—"}</td>
-                      <td>{row.inpatient||0}</td>
-                      <td>{row.emergency||0}</td>
-                      <td>{row.diagnoses||0}</td>
+                      <td style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.78rem"}}>{row.probability?`${row.probability}%`:"—"}</td>
+                      <td><FollowupBadge status={row.followup_status||"pending"}/></td>
                       <td><span style={{fontSize:"0.78rem",fontWeight:600,color:"var(--accent)"}}>{row.clinician}</span></td>
-                      <td style={{maxWidth:110,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",color:"var(--text-muted)",fontSize:"0.76rem"}}>{row.notes||"—"}</td>
+                      <td style={{fontSize:"0.76rem",color:"var(--text-muted)"}}>{row.ward||"—"}</td>
                       <td style={{color:"var(--text-muted)",fontSize:"0.76rem",whiteSpace:"nowrap"}}>{row.created_at?row.created_at.split(" ")[0]:"—"}</td>
+                      <td>
+                        <div style={{display:"flex",gap:5}}>
+                          <button title="Update follow-up" onClick={()=>openFup(row)}
+                            style={{padding:"3px 8px",fontSize:"0.73rem",background:"var(--accent-light)",color:"var(--accent)",border:"1px solid rgba(2,132,199,0.2)",borderRadius:6,cursor:"pointer",fontFamily:"inherit",fontWeight:600}}>📋</button>
+                          {row.shap_json&&row.shap_json!=="[]"&&(
+                            <button title="View explanation" onClick={()=>setShapRow(row)}
+                              style={{padding:"3px 8px",fontSize:"0.73rem",background:"var(--purple-light)",color:"var(--purple)",border:"1px solid rgba(124,58,237,0.2)",borderRadius:6,cursor:"pointer",fontFamily:"inherit",fontWeight:600}}>🧠</button>
+                          )}
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -3186,7 +3622,7 @@
                         <button className="btn btn-primary" onClick={async()=>{
                           if(!otpVal||otpVal.length<4){showToast("Enter the OTP","error");return;}
                           if(!form.new_password){showToast("Enter new password","error");return;}
-                          if(form.new_password!==form.confirm){showToast("Passwords don't match","error");return;}
+                          if(form.new_password!==form.confirm){showToast("Passwords don&#39;t match","error");return;}
                           await submit();
                         }} disabled={saving}>{saving?"Updating…":"✓ Reset Password via OTP"}</button>
                       </>
@@ -3219,15 +3655,15 @@
     const allFaqs=[
       {q:"What does this model predict?",a:"This model predicts 30-day hospital readmission risk specifically for diabetic patients. It returns a binary outcome (High Risk / Low Risk) along with a confidence percentage, based on an ensemble of XGBoost (55%) and LightGBM (45%) models trained on 101,000+ real patient records from the UCI Diabetes Readmission dataset.",cat:"Model"},
       {q:"How accurate is the model?",a:"The model achieves ~68.5% accuracy with an AUC-ROC of 0.74 on the test set. The ensemble uses an optimized decision threshold for clinical use. Note: this is a decision support tool — always combine AI outputs with clinical judgment.",cat:"Model"},
-      {q:"What are the most important features?",a:"★ The top predictors are: Total Hospital Encounters (≥3 = chronic patient), Prior Inpatient Visits, Prior ER Visits, Number of Diagnoses (≥9 = high complexity), Primary Diagnosis Group (Circulatory/Respiratory = highest risk), and Polypharmacy (≥20 medications). These 6 features drive over 80% of the model's predictive signal.",cat:"Model"},
+      {q:"What are the most important features?",a:"★ The top predictors are: Total Hospital Encounters (≥3 = chronic patient), Prior Inpatient Visits, Prior ER Visits, Number of Diagnoses (≥9 = high complexity), Primary Diagnosis Group (Circulatory/Respiratory = highest risk), and Polypharmacy (≥20 medications). These 6 features drive over 80% of the model&#39;s predictive signal.",cat:"Model"},
       {q:"How do I interpret a High Risk result?",a:"A High Risk result (typically >55% confidence) means the patient has elevated probability of readmission within 30 days. Recommended actions include: extended post-discharge follow-up, medication reconciliation review, arranging home care or outpatient follow-up appointment, and verifying discharge instructions are understood.",cat:"Clinical"},
-      {q:"Can I trust a Low Risk result completely?",a:"No AI system is 100% accurate. A Low Risk result reduces concern but doesn't guarantee no readmission. Always factor in patient-specific circumstances, social determinants, and clinical judgment. The model is a supplementary decision support tool, not a replacement for clinical assessment.",cat:"Clinical"},
+      {q:"Can I trust a Low Risk result completely?",a:"No AI system is 100% accurate. A Low Risk result reduces concern but doesn&#39;t guarantee no readmission. Always factor in patient-specific circumstances, social determinants, and clinical judgment. The model is a supplementary decision support tool, not a replacement for clinical assessment.",cat:"Clinical"},
       {q:"Which features were removed from the form?",a:"Race/Ethnicity, Gender, A1C Result, and Glucose Serum were removed — they have low predictive impact in this model and are auto-filled with safe defaults. Instead, Diagnosis Groups, Discharge Disposition, Admission Type, and Medical Specialty are used — all higher-signal clinical inputs for readmission prediction.",cat:"Model"},
       {q:"How do I change my password?",a:"Go to My Account → Change Password section. You have two methods: (1) Use Current Password — enter your existing password and new password. (2) Use Email OTP — receive a one-time code to your registered email, ideal if you've forgotten your current password.",cat:"Account"},
       {q:"What if I forget my password completely?",a:"Click 'Forgot password?' on the login page. Enter your registered email, receive an OTP, verify it, and set a new password. The entire flow takes under 2 minutes. OTPs expire after 10 minutes for security.",cat:"Account"},
       {q:"Is patient data secure?",a:"The system is designed with HIPAA-aware principles. Patient records are associated with your clinician account, not shared across clinicians (except to Admins). All API calls use token-based authentication. Do not enter real patient PII — use anonymized or test data during evaluation.",cat:"Privacy"},
       {q:"Why did I see 'Feature shape mismatch'?",a:"This was a legacy issue where the old form sent only 12 features but the model expected 63 derived features. The current version collects all required inputs and the backend automatically constructs the complete feature vector. This error should no longer occur with the current form.",cat:"Technical"},
-      {q:"What is the Diagnosis Group selector?",a:"The ICD-9 diagnosis groups map standard diagnosis codes to 20 clinical categories (Circulatory, Respiratory, Diabetes, Injury, etc.). Select the category that best matches the patient's primary, secondary, and tertiary diagnoses. 'Circulatory' and 'Respiratory' groups are highest-risk predictors.",cat:"Clinical"},
+      {q:"What is the Diagnosis Group selector?",a:"The ICD-9 diagnosis groups map standard diagnosis codes to 20 clinical categories (Circulatory, Respiratory, Diabetes, Injury, etc.). Select the category that best matches the patient&#39;s primary, secondary, and tertiary diagnoses. 'Circulatory' and 'Respiratory' groups are highest-risk predictors.",cat:"Clinical"},
       ...(user.role==="admin"?[
         {q:"How do I add clinician accounts?",a:"Admin sidebar → User Management → 'Add New Clinician' form at the top → fill name, email, password → click Create. The clinician logs in with those credentials and can complete their professional profile. You can also view, search, and delete clinician accounts from this panel.",cat:"Admin"},
         {q:"How do I view all patient records?",a:"Admin sidebar → All Patients. Admins see all predictions across all clinicians with full details, risk filter, name/ID search, and clinician attribution. All records are read-only for admins — clinicians retain ownership.",cat:"Admin"},
@@ -3367,10 +3803,335 @@
   }
 
   //APP
+  // -- BULK CSV IMPORT --───────────────────────────────────────────────────────
+  function BulkImport({showToast}) {
+    const [file,setFile]         = React.useState(null);
+    const [results,setResults]   = React.useState(null);
+    const [loading,setLoading]   = React.useState(false);
+    const [preview,setPreview]   = React.useState([]);
+    const [parsedRows,setParsedRows] = React.useState([]);
+
+    const parseCSV = (text) => {
+      var NL = "\n";
+      var allLines = text.trim().split(NL);
+      var lines = allLines.filter(function(l){ return l.trim(); });
+      if(lines.length < 2) return [];
+      var headers = lines[0].split(",").map(function(h){
+        return h.trim().replace(/"/g,"").toLowerCase().replace(/\s+/g,"_");
+      });
+      return lines.slice(1).map(function(line){
+        var vals = line.split(",").map(function(v){ return v.trim().replace(/"/g,""); });
+        var obj = {};
+        headers.forEach(function(h,i){ obj[h] = vals[i] || ""; });
+        return obj;
+      });
+    };
+
+    const handleFile = (e) => {
+      const f = e.target.files[0];
+      if(!f) return;
+      if(!f.name.endsWith(".csv")){ showToast("Please upload a .csv file","error"); return; }
+      setFile(f);
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const rows = parseCSV(ev.target.result);
+        setParsedRows(rows);
+        setPreview(rows.slice(0,5));
+      };
+      reader.readAsText(f);
+    };
+
+    const runBulk = async () => {
+      if(!parsedRows.length){ showToast("No data to import","error"); return; }
+      setLoading(true); setResults(null);
+      try {
+        const data = await api("/bulk-predict",{method:"POST",body:JSON.stringify({rows:parsedRows})});
+        setResults(data);
+        showToast("Done — "+data.total+" patients processed, "+data.high_risk+" high risk","success");
+      } catch(e){ showToast("Bulk import failed: "+e.message,"error"); }
+      setLoading(false);
+    };
+
+    const downloadTemplate = () => {
+      var NL = "\n";
+      var rows = [
+        "patient_name,age,time_in_hospital,num_lab_procedures,num_procedures,num_medications,number_outpatient,number_emergency,number_inpatient,number_diagnoses,insulin,change,diabetesMed,ward,patient_encounter_count",
+        "John Smith,72,5,42,2,18,0,1,2,8,Steady,No,Yes,Cardiology,3",
+        "Priya Patel,65,3,28,1,11,1,0,0,5,No,Ch,Yes,Medicine,1"
+      ];
+      var blob = new Blob([rows.join(NL)], {type:"text/csv"});
+      var url  = URL.createObjectURL(blob);
+      var a    = document.createElement("a");
+      a.href = url; a.download = "bulk_import_template.csv";
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); URL.revokeObjectURL(url);
+    };
+
+    const exportCSV = () => {
+      if(!results || !results.results) return;
+      var NL = "\n";
+      var headers = ["Patient ID","Name","Result","Probability","Ward"];
+      var csvRows = results.results.map(function(r){
+        var cells = [r.patient_id, r.patient_name, r.result, r.probability, r.ward||""];
+        return cells.map(function(v){
+          var s = String(v == null ? "" : v).replace(/"/g, '""');
+          return '"' + s + '"';
+        }).join(",");
+      });
+      var blob = new Blob([headers.join(",") + NL + csvRows.join(NL)], {type:"text/csv"});
+      var url  = URL.createObjectURL(blob);
+      var a    = document.createElement("a");
+      a.href = url; a.download = "bulk_results.csv";
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); URL.revokeObjectURL(url);
+      showToast("CSV exported","success");
+    };
+
+    return (
+      <div className="page">
+        <div className="card" style={{marginBottom:16}}>
+          <div className="card-title">📥 Bulk CSV Import</div>
+          <div className="card-sub" style={{marginBottom:16}}>
+            Upload a CSV with patient data and run predictions on all rows at once. Max 500 patients per file.
+          </div>
+
+          <div style={{display:"flex",gap:10,marginBottom:20,flexWrap:"wrap"}}>
+            <button onClick={downloadTemplate}
+              style={{padding:"8px 18px",background:"var(--surface2)",color:"var(--accent)",border:"1.5px solid var(--accent)",borderRadius:8,fontFamily:"inherit",fontSize:"0.83rem",fontWeight:600,cursor:"pointer"}}>
+              📄 Download Template CSV
+            </button>
+          </div>
+
+          <div style={{border:"2px dashed var(--border)",borderRadius:12,padding:"28px 20px",textAlign:"center",
+            marginBottom:16,cursor:"pointer",background:"var(--surface2)"}}
+            onDragOver={e=>{e.preventDefault();e.currentTarget.style.borderColor="var(--accent)";}}
+            onDragLeave={e=>e.currentTarget.style.borderColor="var(--border)"}
+            onDrop={e=>{e.preventDefault();e.currentTarget.style.borderColor="var(--border)";
+              const f=e.dataTransfer.files[0]; if(f) handleFile({target:{files:[f]}});}}>
+            <div style={{fontSize:"2.5rem",marginBottom:8}}>📊</div>
+            <div style={{fontWeight:600,color:"var(--text)",marginBottom:4,fontSize:"0.9rem"}}>Drag and drop a CSV file here</div>
+            <div style={{color:"var(--text-muted)",fontSize:"0.78rem",marginBottom:14}}>or click to browse</div>
+            <input type="file" accept=".csv" onChange={handleFile} style={{display:"none"}} id="csv-upload"/>
+            <label htmlFor="csv-upload"
+              style={{padding:"8px 22px",background:"var(--accent)",color:"white",borderRadius:8,cursor:"pointer",fontFamily:"inherit",fontSize:"0.83rem",fontWeight:600}}>
+              Choose File
+            </label>
+            {file && (
+              <div style={{marginTop:12,fontSize:"0.8rem",color:"var(--success)",fontWeight:600}}>
+                {"✅ " + file.name + " — " + parsedRows.length + " rows detected"}
+              </div>
+            )}
+          </div>
+
+          {preview.length > 0 && (
+            <div style={{marginBottom:16}}>
+              <div style={{fontSize:"0.78rem",fontWeight:700,color:"var(--text-muted)",textTransform:"uppercase",letterSpacing:"0.4px",marginBottom:8}}>
+                Preview (first 5 rows)
+              </div>
+              <div className="table-wrap" style={{maxHeight:180,overflow:"auto"}}>
+                <table style={{fontSize:"0.76rem"}}>
+                  <thead><tr>{Object.keys(preview[0]).slice(0,8).map(k=><th key={k}>{k}</th>)}</tr></thead>
+                  <tbody>{preview.map((row,i)=>(
+                    <tr key={i}>{Object.values(row).slice(0,8).map((v,j)=><td key={j}>{v||"—"}</td>)}</tr>
+                  ))}</tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {parsedRows.length > 0 && (
+            <button onClick={runBulk} disabled={loading}
+              style={{width:"100%",padding:"11px",background:"linear-gradient(135deg,var(--accent),var(--accent2))",
+                color:"white",border:"none",borderRadius:8,fontFamily:"inherit",fontSize:"0.9rem",
+                fontWeight:700,cursor:loading?"not-allowed":"pointer",boxShadow:"0 3px 14px rgba(2,132,199,0.35)"}}>
+              {loading ? ("⏳ Processing " + parsedRows.length + " patients…") : ("🚀 Run Predictions on " + parsedRows.length + " Patients")}
+            </button>
+          )}
+        </div>
+
+        {results && (
+          <div className="card">
+            <div style={{display:"flex",gap:16,marginBottom:16,flexWrap:"wrap",alignItems:"center"}}>
+              <div className="kpi" style={{flex:1,minWidth:120}}>
+                <div className="kpi-val">{results.total}</div>
+                <div className="kpi-key">Total Processed</div>
+              </div>
+              <div className="kpi" style={{flex:1,minWidth:120,borderColor:"rgba(220,38,38,0.2)"}}>
+                <div className="kpi-val" style={{color:"var(--danger)"}}>{results.high_risk}</div>
+                <div className="kpi-key">High Risk</div>
+              </div>
+              <div className="kpi" style={{flex:1,minWidth:120,borderColor:"rgba(5,150,105,0.2)"}}>
+                <div className="kpi-val" style={{color:"var(--success)"}}>{results.low_risk}</div>
+                <div className="kpi-key">Low Risk</div>
+              </div>
+              <button onClick={exportCSV}
+                style={{padding:"8px 16px",background:"var(--success)",color:"white",border:"none",borderRadius:8,fontSize:"0.8rem",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
+                ⬇ Export CSV
+              </button>
+            </div>
+            <div className="table-wrap">
+              <table>
+                <thead><tr><th>#</th><th>Patient ID</th><th>Name</th><th>Result</th><th>Probability</th><th>Ward</th></tr></thead>
+                <tbody>
+                  {results.results.map((r,i)=>(
+                    <tr key={i}>
+                      <td style={{color:"var(--text-muted)",fontSize:"0.75rem"}}>{i+1}</td>
+                      <td><span className="badge badge-pid">{r.patient_id||"ERR"}</span></td>
+                      <td style={{fontWeight:600}}>{r.patient_name}</td>
+                      <td><span className={"badge "+(r.result==="High Risk"?"badge-danger":"badge-success")}>{r.result}</span></td>
+                      <td style={{fontFamily:"'JetBrains Mono',monospace"}}>{r.probability ? (r.probability+"%") : "—"}</td>
+                      <td style={{fontSize:"0.76rem",color:"var(--text-muted)"}}>{r.ward||"—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // -- ALERTS CONFIG --──────────────────────────────────────────────────────────
+  function AlertsConfig({showToast}) {
+    const [cfg,setCfg]         = React.useState({email_alerts:false,alert_email:"",smtp_host:"smtp.gmail.com",smtp_port:587,smtp_user:"",smtp_pass:""});
+    const [loading,setLoading] = React.useState(true);
+    const [saving,setSaving]   = React.useState(false);
+    const [testing,setTesting] = React.useState(false);
+
+    React.useEffect(()=>{
+      api("/alerts-config")
+        .then(d=>{ setCfg(prev=>({...prev,...d})); setLoading(false); })
+        .catch(()=>setLoading(false));
+    },[]);
+
+    const save = async()=>{
+      setSaving(true);
+      try {
+        await api("/alerts-config",{method:"POST",body:JSON.stringify(cfg)});
+        showToast("Alert settings saved","success");
+      } catch { showToast("Failed to save","error"); }
+      setSaving(false);
+    };
+
+    const test = async()=>{
+      setTesting(true);
+      try {
+        const d = await api("/alerts-test",{method:"POST"});
+        showToast(d.message||"Test sent","success");
+      } catch(e){ showToast(e.message||"Test failed","error"); }
+      setTesting(false);
+    };
+
+    if(loading) return <div className="page"><div className="spinner"/></div>;
+
+    const fieldStyle = {width:"100%",padding:"8px 10px",borderRadius:8,border:"1.5px solid var(--border)",background:"var(--surface2)",color:"var(--text)",fontFamily:"inherit",fontSize:"0.85rem"};
+    const lblStyle   = {fontSize:"0.72rem",fontWeight:700,color:"var(--text-muted)",textTransform:"uppercase",letterSpacing:"0.4px",display:"block",marginBottom:6};
+
+    return (
+      <div className="page">
+        <div className="card" style={{maxWidth:560}}>
+          <div className="card-title">🔔 High-Risk Alert Settings</div>
+          <div className="card-sub" style={{marginBottom:20}}>
+            Get an email whenever a patient is flagged High Risk. Uses your own Gmail SMTP — no paid service needed.
+          </div>
+
+          <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:"var(--surface2)",
+            borderRadius:10,border:"1px solid var(--border)",marginBottom:20}}>
+            <div style={{flex:1}}>
+              <div style={{fontWeight:600,fontSize:"0.88rem",color:"var(--text)"}}>Enable email alerts</div>
+              <div style={{fontSize:"0.76rem",color:"var(--text-muted)"}}>
+                Send an alert email every time a High Risk prediction is made
+              </div>
+            </div>
+            <div onClick={()=>setCfg(prev=>({...prev,email_alerts:!prev.email_alerts}))}
+              style={{width:44,height:24,borderRadius:99,
+                background:cfg.email_alerts?"var(--success)":"var(--border)",
+                cursor:"pointer",position:"relative",transition:"background 0.2s",flexShrink:0}}>
+              <div style={{position:"absolute",top:3,
+                left:cfg.email_alerts?22:3,
+                width:18,height:18,borderRadius:"50%",background:"white",
+                transition:"left 0.2s",boxShadow:"0 1px 4px rgba(0,0,0,0.2)"}}/>
+            </div>
+          </div>
+
+          <div style={{marginBottom:14}}>
+            <label style={lblStyle}>Alert recipient email</label>
+            <input style={fieldStyle} type="email" value={cfg.alert_email}
+              onChange={e=>setCfg(p=>({...p,alert_email:e.target.value}))}
+              placeholder="doctor@hospital.com"/>
+            <div style={{fontSize:"0.72rem",color:"var(--text-muted)",marginTop:4}}>
+              Who receives the alert (can be same as your login email)
+            </div>
+          </div>
+
+          <div style={{display:"grid",gridTemplateColumns:"1fr 90px",gap:10,marginBottom:14}}>
+            <div>
+              <label style={lblStyle}>SMTP host</label>
+              <input style={fieldStyle} value={cfg.smtp_host}
+                onChange={e=>setCfg(p=>({...p,smtp_host:e.target.value}))}
+                placeholder="smtp.gmail.com"/>
+            </div>
+            <div>
+              <label style={lblStyle}>Port</label>
+              <input style={fieldStyle} type="number" value={cfg.smtp_port}
+                onChange={e=>setCfg(p=>({...p,smtp_port:parseInt(e.target.value)||587}))}/>
+            </div>
+          </div>
+
+          <div style={{marginBottom:14}}>
+            <label style={lblStyle}>Gmail address (sender)</label>
+            <input style={fieldStyle} value={cfg.smtp_user}
+              onChange={e=>setCfg(p=>({...p,smtp_user:e.target.value}))}
+              placeholder="your.gmail@gmail.com"/>
+          </div>
+
+          <div style={{marginBottom:20}}>
+            <label style={lblStyle}>Gmail App Password</label>
+            <input style={fieldStyle} type="password" value={cfg.smtp_pass}
+              onChange={e=>setCfg(p=>({...p,smtp_pass:e.target.value}))}
+              placeholder="xxxx xxxx xxxx xxxx"/>
+            <div style={{fontSize:"0.72rem",color:"var(--text-muted)",marginTop:4}}>
+              Not your Google password. Create one at myaccount.google.com → Security → App Passwords
+            </div>
+          </div>
+
+          <div style={{padding:"12px 16px",background:"#fffbeb",border:"1px solid rgba(217,119,6,0.3)",
+            borderRadius:10,marginBottom:20,fontSize:"0.78rem",color:"#92400e"}}>
+            <strong>📌 Gmail setup:</strong> Enable 2FA → go to myaccount.google.com → Security → App Passwords → create one for Mail → paste the 16-char code above.
+          </div>
+
+          <div style={{display:"flex",gap:10}}>
+            <button onClick={save} disabled={saving}
+              style={{flex:1,padding:"10px",background:"var(--accent)",color:"white",border:"none",
+                borderRadius:8,fontFamily:"inherit",fontSize:"0.87rem",fontWeight:600,cursor:"pointer"}}>
+              {saving ? "Saving…" : "💾 Save Settings"}
+            </button>
+            <button onClick={test} disabled={testing}
+              style={{padding:"10px 18px",background:"var(--surface2)",color:"var(--text)",
+                border:"1.5px solid var(--border)",borderRadius:8,fontFamily:"inherit",fontSize:"0.87rem",fontWeight:600,cursor:"pointer"}}>
+              {testing ? "Sending…" : "📧 Send Test"}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   function App() {
     const [user,setUser] = useState(null);
     const [tab,setTab] = useState("dashboard");
     const [toast,setToast] = useState(null);
+    const [dark,setDark] = useState(()=>{
+      try { return localStorage.getItem("hrp-dark")==="1"; } catch { return false; }
+    });
+
+    useEffect(()=>{
+      document.body.classList.toggle("dark", dark);
+      try { localStorage.setItem("hrp-dark", dark?"1":"0"); } catch {}
+    }, [dark]);
+
+    const toggleDark = () => setDark(d => !d);
 
     const [helpOpen,setHelpOpen]=useState(false);
     const showToast=(msg,type="info")=>setToast({msg,type,id:Date.now()});
@@ -3383,7 +4144,8 @@
     const titles={
       dashboard:"Dashboard",predict:"New Prediction — Clinical Risk Assessment",
       history:"My Patients",metrics:"Model Performance",
-      account:"My Account",
+      account:"My Account",bulkimport:"Bulk CSV Import",
+      alerts:"High-Risk Alert Settings",
       allpatients:"All Patients",users:"User Management",
       systemstats:"System Analytics",activitylog:"Activity Log"
     };
@@ -3398,7 +4160,7 @@
 
     return (
       <div className="shell">
-        <Sidebar user={user} tab={tab} setTab={setTab} onLogout={handleLogout}/>
+        <Sidebar user={user} tab={tab} setTab={setTab} onLogout={handleLogout} dark={dark} toggleDark={toggleDark}/>
         <div className="main">
           <div className="topbar">
             <h2>{titles[tab]||"HR-Prediction-AI"}</h2>
@@ -3420,7 +4182,9 @@
           {tab==="dashboard"   && <Dashboard user={user} showToast={showToast} setTab={setTab}/>}
           {tab==="predict"     && <Predict showToast={showToast}/>}
           {tab==="history"     && <History showToast={showToast}/>}
+          {tab==="bulkimport"  && <BulkImport showToast={showToast}/>}
           {tab==="metrics"     && <ModelMetrics showToast={showToast}/>}
+          {tab==="alerts"      && <AlertsConfig showToast={showToast}/>}
           {tab==="account"     && <AccountPage user={user} showToast={showToast} onLogout={handleLogout}/>}
           {tab==="allpatients" && user.role==="admin" && <AllPatients showToast={showToast}/>}
           {tab==="users"       && user.role==="admin" && <Users showToast={showToast}/>}
@@ -3450,7 +4214,44 @@
     );
   }
 
+  // Mark app as mounted — hides boot loader
+  window.__reactMounted = true;
+  const _bootEl = document.getElementById("boot-loader");
+  if (_bootEl) _bootEl.style.display = "none";
   ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 </script>
+  <script>
+    // Hide boot loader once React mounts, or show error if it fails
+    window.__reactMounted = false;
+    const _origRender = ReactDOM.render || (ReactDOM.createRoot ? ReactDOM.createRoot : null);
+
+    // Fallback: if nothing renders in 8 seconds, show an error
+    setTimeout(function() {
+      if (!window.__reactMounted) {
+        const loader = document.getElementById("boot-loader");
+        const errBox = document.getElementById("boot-error");
+        if (loader && errBox) {
+          errBox.style.display = "block";
+          errBox.innerHTML =
+            "<strong>⚠️ App failed to load</strong><br><br>" +
+            "Open browser DevTools (F12) → Console tab to see the exact error.<br><br>" +
+            "<strong>Most common causes:</strong><br>" +
+            "• Flask server not running (start with <code>python app.py</code>)<br>" +
+            "• Opened as file:// instead of http://127.0.0.1:10000<br>" +
+            "• Missing internet connection (CDN scripts blocked)";
+        }
+      }
+    }, 8000);
+
+    // Catch global JS errors and show them
+    window.addEventListener("error", function(e) {
+      const errBox = document.getElementById("boot-error");
+      if (errBox && !window.__reactMounted) {
+        errBox.style.display = "block";
+        errBox.innerHTML = "<strong>⚠️ JavaScript Error:</strong><br>" + (e.message || "Unknown error") +
+          "<br><small style='color:#991b1b'>" + (e.filename ? e.filename.split('/').pop() : "") + " line " + e.lineno + "</small>";
+      }
+    });
+  </script>
 </body>
 </html>
